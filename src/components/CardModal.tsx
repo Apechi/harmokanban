@@ -34,6 +34,7 @@ export default function CardModal({
   const [tags, setTags] = useState<string[]>([]);
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState("");
+  const [assignee, setAssignee] = useState("");
 
   const toDateTimeLocalString = (val: string | null | undefined): string => {
     if (!val) return "";
@@ -53,6 +54,7 @@ export default function CardModal({
       setTags(card.tags || []);
       setTagsInput(card.tags ? card.tags.join(", ") : "");
       setSubTasks(card.subTasks || []);
+      setAssignee(card.assignee || "");
     }
   }, [card]);
 
@@ -80,6 +82,7 @@ export default function CardModal({
       storyPoints: storyPoints === null || isNaN(storyPoints) ? null : Number(storyPoints),
       tags: parsedTags,
       subTasks,
+      assignee: assignee.trim() || null,
     };
 
     onSave(updatedCard);
@@ -269,6 +272,21 @@ export default function CardModal({
                     disabled={localRole === "viewer"}
                     className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
                     placeholder="e.g. feature, backend, ui"
+                  />
+                </div>
+
+                {/* Assignee */}
+                <div className="space-y-1">
+                  <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
+                    <User size={11} /> ASSIGNEE
+                  </label>
+                  <input
+                    type="text"
+                    value={assignee}
+                    onChange={(e) => setAssignee(e.target.value)}
+                    disabled={localRole === "viewer"}
+                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
+                    placeholder="Assignee name..."
                   />
                 </div>
               </div>

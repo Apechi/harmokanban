@@ -64,6 +64,8 @@ export function syncYjsToBoardState(yRootMap: Y.Map<any>): BoardState | null {
       const tagsArr = val.get('tags') as Y.Array<string> | undefined;
       const subTasksArr = val.get('subTasks') as Y.Array<any> | undefined;
       
+      const statusHistoryArr = val.get('statusHistory') as Y.Array<any> | undefined;
+      
       resultCards[key] = {
         id: val.get('id') as string,
         columnId: val.get('columnId') as string,
@@ -77,6 +79,8 @@ export function syncYjsToBoardState(yRootMap: Y.Map<any>): BoardState | null {
         subTasks: subTasksArr ? subTasksArr.toArray() : [],
         code: val.get('code') as string,
         createdAt: val.get('createdAt') as number,
+        assignee: val.get('assignee') as string | null,
+        statusHistory: statusHistoryArr ? statusHistoryArr.toArray() : [],
       };
     }
   });
@@ -180,6 +184,19 @@ export function syncBoardStateToYjs(state: BoardState, yRootMap: Y.Map<any>, ori
       yCard.set('storyPoints', card.storyPoints);
       yCard.set('code', card.code);
       yCard.set('createdAt', card.createdAt);
+      yCard.set('assignee', card.assignee || null);
+
+      // Sync statusHistory
+      let yStatusHistory = yCard.get('statusHistory') as Y.Array<any> | undefined;
+      if (!yStatusHistory) {
+        yStatusHistory = new Y.Array<any>();
+        yCard.set('statusHistory', yStatusHistory);
+      }
+      const currentHistory = yStatusHistory.toArray();
+      if (JSON.stringify(currentHistory) !== JSON.stringify(card.statusHistory || [])) {
+        yStatusHistory.delete(0, yStatusHistory.length);
+        yStatusHistory.insert(0, card.statusHistory || []);
+      }
 
       // Sync tags
       let yTags = yCard.get('tags') as Y.Array<string> | undefined;

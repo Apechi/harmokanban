@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders } from "lucide-react";
+import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders, BarChart2 } from "lucide-react";
 import { BoardState, TaskCard, BoardColumn, Project } from "@/types";
 import { loadBoardState, saveBoardState, loadProjectsList, saveProjectsList, DEFAULT_PROJECT_ID } from "@/lib/db";
 import Board from "@/components/Board";
@@ -12,6 +12,7 @@ import GanttTimeline from "@/components/GanttTimeline";
 import AutomationConsole from "@/components/AutomationConsole";
 import { runAutomations, DEFAULT_RULES, AutomationRule } from "@/lib/automations";
 import ProjectSidebar from "@/components/ProjectSidebar";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 
 // Default seed data if IndexedDB is empty
 const DEFAULT_STATE: BoardState = {
@@ -94,6 +95,24 @@ const DEFAULT_STATE: BoardState = {
   },
 };
 
+// Helper to initialize status history on old cards
+function initializeStatusHistory(state: BoardState): BoardState {
+  if (!state.cards) return state;
+  const updatedCards = { ...state.cards };
+  let changed = false;
+  Object.keys(updatedCards).forEach((cardId) => {
+    const card = updatedCards[cardId];
+    if (!card.statusHistory || card.statusHistory.length === 0) {
+      updatedCards[cardId] = {
+        ...card,
+        statusHistory: [{ columnId: card.columnId, timestamp: card.createdAt || Date.now() }],
+      };
+      changed = true;
+    }
+  });
+  return changed ? { ...state, cards: updatedCards } : state;
+}
+
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>(DEFAULT_PROJECT_ID);
@@ -104,7 +123,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCollabOpen, setIsCollabOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"kanban" | "gantt">("kanban");
+  const [viewMode, setViewMode] = useState<"kanban" | "gantt" | "analytics">("kanban");
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
 
@@ -155,10 +174,15 @@ export default function Home() {
       // 2. Load board state for active project
       const savedBoard = await loadBoardState(activeProj.id);
       if (savedBoard && savedBoard.columns && savedBoard.columnOrder && savedBoard.cards) {
-        setBoardState(savedBoard);
+        const initialized = initializeStatusHistory(savedBoard);
+        setBoardState(initialized);
+        if (JSON.stringify(initialized) !== JSON.stringify(savedBoard)) {
+          await saveBoardState(initialized, activeProj.id);
+        }
       } else {
-        setBoardState(DEFAULT_STATE);
-        await saveBoardState(DEFAULT_STATE, activeProj.id);
+        const initialized = initializeStatusHistory(DEFAULT_STATE);
+        setBoardState(initialized);
+        await saveBoardState(initialized, activeProj.id);
       }
     }
     initProjectsAndBoard();
@@ -212,7 +236,12 @@ export default function Home() {
       setBoardState(cleanState);
       await saveBoardState(cleanState, id);
     } else {
-      setBoardState(savedBoard);
+      const initialized = initializeStatusHistory(savedBoard);
+      currentBoard = initialized;
+      setBoardState(initialized);
+      if (JSON.stringify(initialized) !== JSON.stringify(savedBoard)) {
+        await saveBoardState(initialized, id);
+      }
     }
 
     // Connect to room if the project is configured with a room
@@ -351,6 +380,41 @@ export default function Home() {
         finalState = automatedState;
         origin = "automation";
       });
+    }
+
+    // Record status transitions dynamically
+    if (boardState && boardState.cards) {
+      const updatedCards = { ...finalState.cards };
+      let changed = false;
+      Object.keys(updatedCards).forEach((cardId) => {
+        const newCard = updatedCards[cardId];
+        const oldCard = boardState.cards[cardId];
+        
+        const currentHistory = newCard.statusHistory || [];
+        
+        if (!oldCard || currentHistory.length === 0) {
+          updatedCards[cardId] = {
+            ...newCard,
+            statusHistory: [{ columnId: newCard.columnId, timestamp: Date.now() }],
+          };
+          changed = true;
+        } else if (newCard.columnId !== oldCard.columnId) {
+          const lastTransition = currentHistory[currentHistory.length - 1];
+          if (!lastTransition || lastTransition.columnId !== newCard.columnId) {
+            updatedCards[cardId] = {
+              ...newCard,
+              statusHistory: [...currentHistory, { columnId: newCard.columnId, timestamp: Date.now() }],
+            };
+            changed = true;
+          }
+        }
+      });
+      if (changed) {
+        finalState = {
+          ...finalState,
+          cards: updatedCards,
+        };
+      }
     }
 
     setBoardState(finalState);
@@ -585,6 +649,17 @@ export default function Home() {
               <Calendar size={11} />
               Gantt
             </button>
+            <button
+              onClick={() => setViewMode("analytics")}
+              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                viewMode === "analytics"
+                  ? "bg-brand-accent text-white"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <BarChart2 size={11} />
+              Analytics
+            </button>
           </div>
 
           {/* Automations Console Button */}
@@ -649,7 +724,7 @@ export default function Home() {
               peers={peers}
               onUpdateCursor={updateCursor}
             />
-          ) : (
+          ) : viewMode === "gantt" ? (
             <GanttTimeline
               state={boardState}
               onStateChange={updateBoardState}
@@ -658,6 +733,8 @@ export default function Home() {
               peers={peers}
               onUpdateCursor={updateCursor}
             />
+          ) : (
+            <AnalyticsDashboard state={boardState} />
           )}
         </main>
       </div>

@@ -6,6 +6,11 @@ export interface SubTask {
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
+export interface StatusTransition {
+  columnId: string;
+  timestamp: number;
+}
+
 export interface TaskCard {
   id: string;
   columnId: string;
@@ -19,6 +24,8 @@ export interface TaskCard {
   subTasks: SubTask[];
   code: string; // tactical monospace code e.g. OP-101
   createdAt: number;
+  assignee?: string | null;
+  statusHistory?: StatusTransition[];
 }
 
 export interface BoardColumn {
