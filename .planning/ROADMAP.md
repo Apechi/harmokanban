@@ -9,6 +9,7 @@ KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user valu
 - ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-06-08)
 - ✅ **v2.0 Advanced Collaboration & Multi-Project Support** - Phases 4-5 (shipped 2026-06-09)
 - ✅ **v3.0 Analytics & Performance Dashboard** - Phase 6 (shipped 2026-06-09)
+- ⏳ **v4.0 Visual Identity & Customization** - Phase 7 (Planned)
 
 ## Phases
 
@@ -103,8 +104,8 @@ Plans:
 
 </details>
 
-<details open>
-<summary>⏳ v3.0 Analytics & Performance Dashboard (Planned)</summary>
+<details>
+<summary>✅ v3.0 Analytics & Performance Dashboard (Shipped 2026-06-09)</summary>
 
 **Milestone Goal:** Provide startup teams with actionable productivity insights, team velocity tracking, and project completion forecasting using real-time client-side analytics.
 
@@ -128,12 +129,37 @@ Plans:
 
 </details>
 
+<details open>
+<summary>⏳ v4.0 Visual Identity & Customization (Planned)</summary>
+
+**Milestone Goal:** Provide a configurable look-and-feel system allowing users to select standard themes (Arknights, Arknights Endfield), pick custom accent colors, and configure background overlays.
+
+#### Phase 7: Theme Switcher & Styling Customization
+
+**Goal:** Implement visual customization settings including built-in themes, accent colors, and background overlay style controls.
+**Depends on:** Phase 6
+**Requirements:** THEME-01, THEME-02, THEME-03, THEME-04
+**Success Criteria** (what must be TRUE):
+
+  1. User can choose between "Arknights" and "Arknights Endfield" themes with styling applied immediately.
+  2. User can pick a custom accent color (or select from presets) that overrides the primary brand color in highlights/borders/shadows.
+  3. User can enable/disable grid lines and adjust the opacity of the background overlay.
+  4. Theme choices are saved and persist across page reloads.
+
+**Plans:**
+
+- [ ] 07-01: Implement theme context provider, Tailwind CSS variable overrides, and Endfield light-mode theme variables.
+- [ ] 07-02: Build the Theme Settings/Customization drawer or panel.
+- [ ] 07-03: Implement custom color picker / vibe controls and background overlay config.
+
+</details>
+
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -143,3 +169,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Multi-Project & Time Management | v2.0 | 1/1 | Complete | 2026-06-08 |
 | 5. Collaborative Presence & Role Controls | v2.0 | 1/1 | Complete | 2026-06-09 |
 | 6. Analytics & Performance Dashboard | v3.0 | 4/4 | Complete | 2026-06-09 |
+| 7. Theme Switcher & Styling Customization | v4.0 | 0/3 | Planned | |

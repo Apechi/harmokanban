@@ -59,22 +59,31 @@
 - [x] **ROLE-01**: User can select a role (e.g., Editor or Viewer) when connecting to a room.
 - [x] **ROLE-02**: UI interactions (adding/editing cards, checklist updates, drag-and-drop, and triggers execution) are blocked when the user has the Viewer role.
 
-## v3 Requirements (Active)
+## v3 Requirements (Completed)
 
 ### Metrics & Analytics (METRIC)
 
-- [ ] **METRIC-01**: Record card state transition history (timestamps when a card moves columns) in card metadata for local and peer synchronized states.
-- [ ] **METRIC-02**: Calculate and display an interactive SVG Burndown Chart showing remaining task count or story points vs ideal completion trajectory.
-- [ ] **METRIC-03**: Calculate and visualize team velocity (story points completed per sprint or week) in a custom interactive bar chart.
-- [ ] **METRIC-04**: Calculate and display Lead Time (creation to Done) and Cycle Time (In Progress to Done) metrics.
-- [ ] **METRIC-05**: Provide interactive distribution breakdown charts (by Column, Priority, and Assignee).
-- [ ] **METRIC-06**: All charts must render using lightweight, pure SVG tailored to the tactical monospace theme, complete with interactive mouse-hover details.
-- [ ] **METRIC-07**: Introduce a dedicated "Analytics Dashboard" view toggleable from the main layout.
+- [x] **METRIC-01**: Record card state transition history (timestamps when a card moves columns) in card metadata for local and peer synchronized states.
+- [x] **METRIC-02**: Calculate and display an interactive SVG Burndown Chart showing remaining task count or story points vs ideal completion trajectory.
+- [x] **METRIC-03**: Calculate and visualize team velocity (story points completed per sprint or week) in a custom interactive bar chart.
+- [x] **METRIC-04**: Calculate and display Lead Time (creation to Done) and Cycle Time (In Progress to Done) metrics.
+- [x] **METRIC-05**: Provide interactive distribution breakdown charts (by Column, Priority, and Assignee).
+- [x] **METRIC-06**: All charts must render using lightweight, pure SVG tailored to the tactical monospace theme, complete with interactive mouse-hover details.
+- [x] **METRIC-07**: Introduce a dedicated "Analytics Dashboard" view toggleable from the main layout.
+
+## v4 Requirements (Active)
+
+### Theme & Customization (THEME)
+
+- [ ] **THEME-01**: User can toggle between two built-in visual themes: "Arknights" (default dark tactical styling) and "Arknights Endfield" (warm off-white/beige modern light styling) via a Theme Switcher UI.
+- [ ] **THEME-02**: User can select custom primary/accent colors (using a picker or color preset options) to change the visual highlights, borders, and shadows throughout the app.
+- [ ] **THEME-03**: User can configure and toggle the background overlay (e.g. enable/disable grid lines, adjust scanlines style, and change transparency/opacity).
+- [ ] **THEME-04**: Custom theme preferences are persisted client-side in local storage.
 
 ## Out of Scope
 
-- [ ] Standard centralized backend database/authentication (v1 and v2 focus purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven).
-- [ ] Custom external integration plugins, e.g. GitHub sync, slack bot (deferred to v4).
+- [ ] Standard centralized backend database/authentication (v1, v2, v3, and v4 focus purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven).
+- [ ] Custom external integration plugins, e.g. GitHub sync, slack bot (deferred to v5).
 
 ## Traceability
 
@@ -105,18 +114,23 @@
 | CARD-06 | Phase 4 | Completed |
 | ROLE-01 | Phase 5 | Completed |
 | ROLE-02 | Phase 5 | Completed |
-| METRIC-01 | Phase 6 | Pending |
-| METRIC-02 | Phase 6 | Pending |
-| METRIC-03 | Phase 6 | Pending |
-| METRIC-04 | Phase 6 | Pending |
-| METRIC-05 | Phase 6 | Pending |
-| METRIC-06 | Phase 6 | Pending |
-| METRIC-07 | Phase 6 | Pending |
+| METRIC-01 | Phase 6 | Completed |
+| METRIC-02 | Phase 6 | Completed |
+| METRIC-03 | Phase 6 | Completed |
+| METRIC-04 | Phase 6 | Completed |
+| METRIC-05 | Phase 6 | Completed |
+| METRIC-06 | Phase 6 | Completed |
+| METRIC-07 | Phase 6 | Completed |
+| THEME-01 | Phase 7 | Pending |
+| THEME-02 | Phase 7 | Pending |
+| THEME-03 | Phase 7 | Pending |
+| THEME-04 | Phase 7 | Pending |
 
 **Coverage:**
 
 - v1 requirements: 18 total | 18 completed
 - v2 requirements: 7 total | 7 completed
-- v3 requirements: 7 total | 0 completed
-- Mapped to phases: 32 / 32
+- v3 requirements: 7 total | 7 completed
+- v4 requirements: 4 total | 0 completed
+- Mapped to phases: 36 / 36
 - Unmapped: 0 ✓

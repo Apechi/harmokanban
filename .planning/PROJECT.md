@@ -8,17 +8,15 @@ An intuitive and advanced Kanban web application designed specifically for start
 
 Enable rapid, frictionless startup project planning with a highly interactive, collaborative client-side board and Gantt visualization.
 
-## Current Milestone: v3.0 Analytics & Performance Dashboard
+## Current Milestone: v4.0 Visual Identity & Customization
 
-**Goal:** Provide startup teams with actionable productivity insights, team velocity tracking, and project completion forecasting using real-time client-side analytics.
+**Goal:** Provide a configurable look-and-feel system allowing users to select standard themes (Arknights, Arknights Endfield), pick custom accent colors, and configure background overlays.
 
 **Target features:**
-- State transition history logging in card metadata
-- Interactive SVG Burndown Chart (story points or task count vs ideal line)
-- Velocity Tracker (story points completed over time)
-- Lead Time & Cycle Time statistics
-- Task distribution breakdown (by Column, Priority, Assignee)
-- Interactive Dashboard View with modern tactical UI
+- Theme Switcher component (Arknights default dark vs Arknights Endfield warm light/beige)
+- Dynamic primary/accent color customizer
+- Background overlay controls (opacity adjust, grid pattern toggle)
+- Client-side persistence for theme preferences
 
 ## Requirements
 
@@ -33,15 +31,17 @@ Enable rapid, frictionless startup project planning with a highly interactive, c
 - [x] Real-time Cursor Tracking and Active Card Presence Indicators (Phase 5)
 - [x] Due Date & exact Time Input support (Phase 4)
 - [x] Role-based Collaboration with Editor/Viewer access controls (Phase 5)
+- [x] State transition history logging in card metadata (Phase 6)
+- [x] Interactive SVG Burndown Chart, Velocity Tracker, and lead/cycle time stats (Phase 6)
+- [x] Task distribution breakdown charts (by Column, Priority, Assignee) (Phase 6)
+- [x] Interactive Analytics Dashboard View with tactical SVG charts (Phase 6)
 
 ### Active
 
-- [ ] State transition history logging in card metadata
-- [ ] Interactive SVG Burndown Chart (story points or task count vs ideal line)
-- [ ] Velocity Tracker (story points completed over time)
-- [ ] Lead Time & Cycle Time statistics
-- [ ] Task distribution breakdown (by Column, Priority, Assignee)
-- [ ] Interactive Dashboard View
+- [ ] Theme selector with Arknights (default dark) and Arknights Endfield (light/beige) themes
+- [ ] Accent color selection/override functionality
+- [ ] Background overlay customization and opacity settings
+- [ ] Theme state client persistence (localStorage / Yjs state)
 
 ### Out of Scope
 
