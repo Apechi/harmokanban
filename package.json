@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:signal": "node -e \"process.env.PORT=4444; require('./node_modules/y-webrtc/bin/server.js')\"",
+    "dev": "concurrently -n next,signal -c cyan,yellow \"npm run dev:next\" \"npm run dev:signal\"",
+    "dev:next": "next dev --hostname 0.0.0.0",
+    "dev:signal": "node -e \"process.env.PORT=4444; process.env.HOST='0.0.0.0'; require('./node_modules/y-webrtc/bin/server.js')\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -26,6 +27,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",

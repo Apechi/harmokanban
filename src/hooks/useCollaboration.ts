@@ -83,9 +83,10 @@ export function useCollaboration(
     persistenceRef.current = persistence;
 
     // 2. Setup WebRTC Provider
-    // Use local signaling server first (run `npm run dev:signal`), public fallback
+    // Signaling URL uses current hostname so LAN peers connect to the right IP
+    const signalingHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
     const signalingServers = [
-      "ws://localhost:4444",
+      `ws://${signalingHost}:4444`,
       "wss://signaling.yjs.dev",
     ];
 
