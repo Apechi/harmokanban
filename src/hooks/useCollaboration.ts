@@ -182,11 +182,11 @@ export function useCollaboration(
   };
 
   // Sync React board changes back to Yjs shared Map
-  const broadcastBoardState = (newState: BoardState) => {
+  const broadcastBoardState = (newState: BoardState, origin?: any) => {
     if (!ydocRef.current || isSyncingFromYjsRef.current) return;
 
     const yRootMap = ydocRef.current.getMap("board-root");
-    syncBoardStateToYjs(newState, yRootMap);
+    syncBoardStateToYjs(newState, yRootMap, origin);
   };
 
   // Cleanup on unmount

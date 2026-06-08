@@ -72,6 +72,7 @@ export function syncYjsToBoardState(yRootMap: Y.Map<any>): BoardState | null {
         priority: val.get('priority') as any,
         tags: tagsArr ? tagsArr.toArray() : [],
         dueDate: val.get('dueDate') as string | null,
+        startDate: val.get('startDate') as string | null,
         storyPoints: val.get('storyPoints') as number | null,
         subTasks: subTasksArr ? subTasksArr.toArray() : [],
         code: val.get('code') as string,
@@ -88,7 +89,7 @@ export function syncYjsToBoardState(yRootMap: Y.Map<any>): BoardState | null {
 }
 
 // Write React state board values into Yjs shared Map structure in a deep merge manner
-export function syncBoardStateToYjs(state: BoardState, yRootMap: Y.Map<any>): void {
+export function syncBoardStateToYjs(state: BoardState, yRootMap: Y.Map<any>, origin?: any): void {
   const doc = yRootMap.doc;
   if (!doc) return;
 
@@ -175,6 +176,7 @@ export function syncBoardStateToYjs(state: BoardState, yRootMap: Y.Map<any>): vo
       yCard.set('description', card.description);
       yCard.set('priority', card.priority);
       yCard.set('dueDate', card.dueDate);
+      yCard.set('startDate', card.startDate || null);
       yCard.set('storyPoints', card.storyPoints);
       yCard.set('code', card.code);
       yCard.set('createdAt', card.createdAt);
@@ -203,5 +205,5 @@ export function syncBoardStateToYjs(state: BoardState, yRootMap: Y.Map<any>): vo
         ySubTasks.insert(0, card.subTasks);
       }
     });
-  });
+  }, origin);
 }

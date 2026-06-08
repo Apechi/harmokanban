@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders } from "lucide-react";
 import { BoardState, TaskCard, BoardColumn } from "@/types";
 import { loadBoardState, saveBoardState } from "@/lib/db";
 import Board from "@/components/Board";
 import CardModal from "@/components/CardModal";
 import CollaborateDrawer from "@/components/CollaborateDrawer";
 import { useCollaboration } from "@/hooks/useCollaboration";
-import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio } from "lucide-react";
+import GanttTimeline from "@/components/GanttTimeline";
+import AutomationConsole from "@/components/AutomationConsole";
+import { runAutomations, DEFAULT_RULES, AutomationRule } from "@/lib/automations";
 
 // Default seed data if IndexedDB is empty
 const DEFAULT_STATE: BoardState = {
@@ -43,6 +46,7 @@ const DEFAULT_STATE: BoardState = {
       priority: "LOW",
       tags: ["tutorial", "board"],
       dueDate: "2026-06-30",
+      startDate: null,
       storyPoints: 1,
       subTasks: [
         { id: "sub-1", title: "Read the card description", completed: true },
@@ -59,6 +63,7 @@ const DEFAULT_STATE: BoardState = {
       priority: "MEDIUM",
       tags: ["storage", "offline"],
       dueDate: null,
+      startDate: null,
       storyPoints: 3,
       subTasks: [
         { id: "sub-3", title: "Create a new column", completed: false },
@@ -75,6 +80,7 @@ const DEFAULT_STATE: BoardState = {
       priority: "HIGH",
       tags: ["design", "ui"],
       dueDate: "2026-06-15",
+      startDate: null,
       storyPoints: 5,
       subTasks: [
         { id: "sub-5", title: "Set dominant color #0a0512", completed: true },
@@ -93,6 +99,9 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCollabOpen, setIsCollabOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"kanban" | "gantt">("kanban");
+  const [isAutomationOpen, setIsAutomationOpen] = useState(false);
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
 
   // Initialize collaboration hook
   const {
@@ -126,6 +135,44 @@ export default function Home() {
     initBoard();
   }, []);
 
+  // Load automation rules on mount
+  useEffect(() => {
+    const savedRules = localStorage.getItem("kanban-automations");
+    if (savedRules) {
+      try {
+        setAutomationRules(JSON.parse(savedRules));
+      } catch (e) {
+        setAutomationRules(DEFAULT_RULES);
+      }
+    } else {
+      setAutomationRules(DEFAULT_RULES);
+      localStorage.setItem("kanban-automations", JSON.stringify(DEFAULT_RULES));
+    }
+  }, []);
+
+  // Periodically execute automations (e.g. for time-based triggers like due dates)
+  useEffect(() => {
+    if (!boardState || automationRules.length === 0) return;
+
+    // Check once when board state is loaded
+    runAutomations(boardState, automationRules, (updatedState) => {
+      updateBoardState(updatedState, "automation");
+    });
+
+    const interval = setInterval(() => {
+      runAutomations(boardState, automationRules, (updatedState) => {
+        updateBoardState(updatedState, "automation");
+      });
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [boardState, automationRules]);
+
+  const handleRulesChange = (newRules: AutomationRule[]) => {
+    setAutomationRules(newRules);
+    localStorage.setItem("kanban-automations", JSON.stringify(newRules));
+  };
+
   // Handle auto-join from URL parameter
   const autoJoinCheckedRef = useRef(false);
   useEffect(() => {
@@ -140,11 +187,20 @@ export default function Home() {
   }, [boardState, connectToRoom]);
 
   // Save board state helper with local state updates
-  const updateBoardState = async (newState: BoardState) => {
-    setBoardState(newState);
+  const updateBoardState = async (newState: BoardState, origin?: string) => {
+    let finalState = newState;
+
+    if (origin !== "automation") {
+      runAutomations(newState, automationRules, (automatedState) => {
+        finalState = automatedState;
+        origin = "automation";
+      });
+    }
+
+    setBoardState(finalState);
     setIsSaving(true);
-    await saveBoardState(newState);
-    broadcastBoardState(newState);
+    await saveBoardState(finalState);
+    broadcastBoardState(finalState, origin);
     setIsSaving(false);
   };
 
@@ -161,6 +217,7 @@ export default function Home() {
       priority: "LOW",
       tags: [],
       dueDate: null,
+      startDate: null,
       storyPoints: null,
       subTasks: [],
       code: `OP-${codeNum}`,
@@ -348,6 +405,41 @@ export default function Home() {
             </span>
           )}
 
+          {/* View Mode Segmented Switcher */}
+          <div className="flex bg-brand-bg/60 p-0.5 border border-brand-accent/20 rounded-xs">
+            <button
+              onClick={() => setViewMode("kanban")}
+              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                viewMode === "kanban"
+                  ? "bg-brand-accent text-white"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <LayoutGrid size={11} />
+              Kanban
+            </button>
+            <button
+              onClick={() => setViewMode("gantt")}
+              className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                viewMode === "gantt"
+                  ? "bg-brand-accent text-white"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Calendar size={11} />
+              Gantt
+            </button>
+          </div>
+
+          {/* Automations Console Button */}
+          <button
+            onClick={() => setIsAutomationOpen(true)}
+            className="px-4 py-2 border border-brand-accent/50 bg-brand-accent/5 hover:bg-brand-accent/15 text-brand-accent rounded-xs text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
+          >
+            <Sliders size={14} />
+            AUTOMATIONS
+          </button>
+
           {/* Collaborate Button */}
           <button
             onClick={() => setIsCollabOpen(true)}
@@ -375,15 +467,23 @@ export default function Home() {
       <main className="flex-1 bg-brand-bg relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,85,247,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,85,247,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
-        <Board
-          state={boardState}
-          onStateChange={updateBoardState}
-          onEditCard={handleEditCard}
-          onAddCard={handleAddCard}
-          onUpdateColumnTitle={handleUpdateColumnTitle}
-          onDeleteColumn={handleDeleteColumn}
-          activeCardViewers={activeCardViewers}
-        />
+        {viewMode === "kanban" ? (
+          <Board
+            state={boardState}
+            onStateChange={updateBoardState}
+            onEditCard={handleEditCard}
+            onAddCard={handleAddCard}
+            onUpdateColumnTitle={handleUpdateColumnTitle}
+            onDeleteColumn={handleDeleteColumn}
+            activeCardViewers={activeCardViewers}
+          />
+        ) : (
+          <GanttTimeline
+            state={boardState}
+            onStateChange={updateBoardState}
+            onEditCard={handleEditCard}
+          />
+        )}
       </main>
 
       {/* Card Details Modal Drawer */}
@@ -413,6 +513,15 @@ export default function Home() {
           if (boardState) connectToRoom(code, boardState);
         }}
         onDisconnect={disconnectFromRoom}
+      />
+
+      {/* Automations Console sidebar drawer overlay */}
+      <AutomationConsole
+        isOpen={isAutomationOpen}
+        onClose={() => setIsAutomationOpen(false)}
+        state={boardState}
+        rules={automationRules}
+        onRulesChange={handleRulesChange}
       />
     </div>
   );

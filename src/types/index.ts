@@ -14,6 +14,7 @@ export interface TaskCard {
   priority: Priority;
   tags: string[];
   dueDate: string | null;
+  startDate: string | null;
   storyPoints: number | null;
   subTasks: SubTask[];
   code: string; // tactical monospace code e.g. OP-101
@@ -31,3 +32,12 @@ export interface BoardState {
   columnOrder: string[];
   cards: { [id: string]: TaskCard };
 }
+
+export interface AutomationRule {
+  id: string;
+  trigger: "SUBTASKS_COMPLETED" | "DUE_DATE_NEARING";
+  action: "MOVE_TO_COLUMN" | "SET_PRIORITY";
+  actionValue: string;
+  enabled: boolean;
+}
+

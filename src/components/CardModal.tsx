@@ -24,6 +24,7 @@ export default function CardModal({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("LOW");
   const [dueDate, setDueDate] = useState("");
+  const [startDate, setStartDate] = useState("");
   const [storyPoints, setStoryPoints] = useState<number | null>(null);
   const [tagsInput, setTagsInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -37,6 +38,7 @@ export default function CardModal({
       setDescription(card.description || "");
       setPriority(card.priority);
       setDueDate(card.dueDate || "");
+      setStartDate(card.startDate || "");
       setStoryPoints(card.storyPoints);
       setTags(card.tags || []);
       setTagsInput(card.tags ? card.tags.join(", ") : "");
@@ -59,6 +61,7 @@ export default function CardModal({
       description: description.trim(),
       priority,
       dueDate: dueDate || null,
+      startDate: startDate || null,
       storyPoints: storyPoints === null || isNaN(storyPoints) ? null : Number(storyPoints),
       tags: parsedTags,
       subTasks,
@@ -190,6 +193,19 @@ export default function CardModal({
                     className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono"
                     placeholder="e.g. 5"
                     min="0"
+                  />
+                </div>
+
+                {/* Start Date */}
+                <div className="space-y-1">
+                  <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
+                    <Calendar size={11} /> START DATE
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono"
                   />
                 </div>
 
