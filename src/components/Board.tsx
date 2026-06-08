@@ -12,6 +12,7 @@ interface BoardProps {
   onAddCard: (columnId: string) => void;
   onUpdateColumnTitle: (columnId: string, newTitle: string) => void;
   onDeleteColumn: (columnId: string) => void;
+  activeCardViewers?: { [cardId: string]: string[] };
 }
 
 export default function Board({
@@ -21,6 +22,7 @@ export default function Board({
   onAddCard,
   onUpdateColumnTitle,
   onDeleteColumn,
+  activeCardViewers = {},
 }: BoardProps) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -163,6 +165,7 @@ export default function Board({
                   onAddCard={onAddCard}
                   onUpdateTitle={onUpdateColumnTitle}
                   onDelete={onDeleteColumn}
+                  activeCardViewers={activeCardViewers}
                 />
               );
             })}

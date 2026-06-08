@@ -7,7 +7,7 @@ KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user valu
 ## Phases
 
 - [x] **Phase 1: Core Board & Local Persistence** - Drag-and-drop Kanban board, card details checklist, and IndexedDB local persistence
-- [ ] **Phase 2: P2P Sync & Real-Time Collaboration** - WebRTC sync using Yjs and online presence indicators
+- [x] **Phase 2: P2P Sync & Real-Time Collaboration** - WebRTC sync using Yjs and online presence indicators
 - [ ] **Phase 3: Gantt Timeline & Automation Builder** - Interactive Gantt view and client-side automation rules engine
 
 ## Phase Details
@@ -38,11 +38,11 @@ Plans:
   1. User can input a Room ID to connect to a shared room.
   2. Multi-browser changes sync instantly within the same room.
   3. Network connectivity status and active peer count are visible.
-**Plans:** TBD
+**Plans:** Completed
 
 Plans:
-- [ ] 02-01: Integrate Yjs doc structure with local IndexedDB provider
-- [ ] 02-02: Setup y-webrtc connection sync and connectivity indicator UI
+- [x] 02-01: Integrate Yjs doc structure with local IndexedDB provider
+- [x] 02-02: Setup y-webrtc connection sync and connectivity indicator UI
 
 ### Phase 3: Gantt Timeline & Automation Builder
 **Goal:** Add timeline visualization and automated workflow rules.
@@ -68,5 +68,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Board & Local Persistence | 3/3 | Completed | 2026-06-08 |
-| 2. P2P Sync & Real-Time Collaboration | 0/2 | Not started | - |
+| 2. P2P Sync & Real-Time Collaboration | 2/2 | Completed | 2026-06-08 |
 | 3. Gantt Timeline & Automation Builder | 0/2 | Not started | - |

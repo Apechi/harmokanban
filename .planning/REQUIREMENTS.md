@@ -22,21 +22,21 @@
 
 ### P2P Sync & Real-time Collaboration (SYNC)
 
-- [ ] **SYNC-01**: User can connect to a shared collaborative room by specifying a Room ID
-- [ ] **SYNC-02**: Board updates sync instantly between users in the same room via P2P WebRTC using Yjs
-- [ ] **SYNC-03**: User can see a network status indicator showing active peer connections
+- [x] SYNC-01: User can connect to a shared collaborative room by specifying a Room ID
+- [x] SYNC-02: Board updates sync instantly between users in the same room via P2P WebRTC using Yjs
+- [x] SYNC-03: User can see a network status indicator showing active peer connections
 
 ### Gantt Planning (GANTT)
 
-- [ ] **GANTT-01**: User can switch to a Gantt timeline view displaying cards as horizontal duration bars
-- [ ] **GANTT-02**: User can drag task duration bars to update start/due dates, and resize bars to extend/shorten duration
+- [ ] GANTT-01: User can switch to a Gantt timeline view displaying cards as horizontal duration bars
+- [ ] GANTT-02: User can drag task duration bars to update start/due dates, and resize bars to extend/shorten duration
 
 ### Automations Builder (AUTO)
 
-- [ ] **AUTO-01**: Card automatically moves to the 'Done' column when all checklist subtasks are completed
-- [ ] **AUTO-02**: Card priority automatically updates to 'High' when it is within 24 hours of its due date
-- [ ] **AUTO-03**: User can configure basic Trigger -> Action rules using a declarative Rule Builder UI
-- [ ] **AUTO-04**: Automations engine handles updates without entering infinite recursion loops (using transaction metadata tags)
+- [ ] AUTO-01: Card automatically moves to the 'Done' column when all checklist subtasks are completed
+- [ ] AUTO-02: Card priority automatically updates to 'High' when it is within 24 hours of its due date
+- [ ] AUTO-03: User can configure basic Trigger -> Action rules using a declarative Rule Builder UI
+- [ ] AUTO-04: Automations engine handles updates without entering infinite recursion loops (using transaction metadata tags)
 
 ## v2 Requirements
 
@@ -60,18 +60,18 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BOARD-01 | Phase 1 | Pending |
-| BOARD-02 | Phase 1 | Pending |
-| BOARD-03 | Phase 1 | Pending |
-| BOARD-04 | Phase 1 | Pending |
-| CARD-01 | Phase 1 | Pending |
-| CARD-02 | Phase 1 | Pending |
-| CARD-03 | Phase 1 | Pending |
-| CARD-04 | Phase 1 | Pending |
-| CARD-05 | Phase 1 | Pending |
-| SYNC-01 | Phase 2 | Pending |
-| SYNC-02 | Phase 2 | Pending |
-| SYNC-03 | Phase 2 | Pending |
+| BOARD-01 | Phase 1 | Completed |
+| BOARD-02 | Phase 1 | Completed |
+| BOARD-03 | Phase 1 | Completed |
+| BOARD-04 | Phase 1 | Completed |
+| CARD-01 | Phase 1 | Completed |
+| CARD-02 | Phase 1 | Completed |
+| CARD-03 | Phase 1 | Completed |
+| CARD-04 | Phase 1 | Completed |
+| CARD-05 | Phase 1 | Completed |
+| SYNC-01 | Phase 2 | Completed |
+| SYNC-02 | Phase 2 | Completed |
+| SYNC-03 | Phase 2 | Completed |
 | GANTT-01 | Phase 3 | Pending |
 | GANTT-02 | Phase 3 | Pending |
 | AUTO-01 | Phase 3 | Pending |

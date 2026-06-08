@@ -8,11 +8,14 @@ interface CardProps {
   card: TaskCard;
   index: number;
   onClick: () => void;
+  viewers?: string[];
 }
 
-export default function Card({ card, index, onClick }: CardProps) {
+export default function Card({ card, index, onClick, viewers = [] }: CardProps) {
   const completedSubTasks = card.subTasks.filter((t) => t.completed).length;
   const totalSubTasks = card.subTasks.length;
+
+  const hasViewers = viewers.length > 0;
 
   const priorityColor =
     card.priority === "HIGH"
@@ -30,6 +33,8 @@ export default function Card({ card, index, onClick }: CardProps) {
           {...provided.dragHandleProps}
           onClick={onClick}
           className={`tacticool-card p-3 rounded-xs flex flex-col gap-2 cursor-pointer transition-all ${
+            hasViewers ? "border-cyan-400/50 bg-cyan-950/10 shadow-sm shadow-cyan-400/10" : ""
+          } ${
             snapshot.isDragging
               ? "border-brand-accent/70 shadow-lg shadow-brand-accent/20 bg-brand-card/90"
               : ""
@@ -40,11 +45,24 @@ export default function Card({ card, index, onClick }: CardProps) {
             <span className="tactical-label text-brand-accent text-[10px] font-bold">
               {card.code}
             </span>
-            <span
-              className={`graffiti-tag px-2 py-0.5 text-[9px] font-black rounded-xs uppercase tracking-wider ${priorityColor}`}
-            >
-              {card.priority}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {hasViewers && (
+                <div className="flex gap-1 items-center mr-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                  <span 
+                    className="text-[8px] text-cyan-400 font-mono tracking-tighter uppercase font-bold max-w-[80px] truncate"
+                    title={viewers.join(", ")}
+                  >
+                    {viewers[0]}{viewers.length > 1 ? ` +${viewers.length - 1}` : ""}
+                  </span>
+                </div>
+              )}
+              <span
+                className={`graffiti-tag px-2 py-0.5 text-[9px] font-black rounded-xs uppercase tracking-wider ${priorityColor}`}
+              >
+                {card.priority}
+              </span>
+            </div>
           </div>
 
           {/* Card Title */}

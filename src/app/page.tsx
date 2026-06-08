@@ -5,7 +5,9 @@ import { BoardState, TaskCard, BoardColumn } from "@/types";
 import { loadBoardState, saveBoardState } from "@/lib/db";
 import Board from "@/components/Board";
 import CardModal from "@/components/CardModal";
-import { Plus, LayoutGrid, AlertCircle, RefreshCw } from "lucide-react";
+import CollaborateDrawer from "@/components/CollaborateDrawer";
+import { useCollaboration } from "@/hooks/useCollaboration";
+import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio } from "lucide-react";
 
 // Default seed data if IndexedDB is empty
 const DEFAULT_STATE: BoardState = {
@@ -90,13 +92,27 @@ export default function Home() {
   const [activeCard, setActiveCard] = useState<TaskCard | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCollabOpen, setIsCollabOpen] = useState(false);
+
+  // Initialize collaboration hook
+  const {
+    roomId,
+    isConnected,
+    peerCount,
+    peers,
+    localCallsign,
+    updateCallsign,
+    connectToRoom,
+    disconnectFromRoom,
+    setEditingCard,
+    broadcastBoardState,
+  } = useCollaboration(boardState, setBoardState);
 
   // Load state on mount
   useEffect(() => {
     async function initBoard() {
       const saved = await loadBoardState();
       if (saved) {
-        // Simple sanity checks to ensure compatibility of the loaded state
         if (saved.columns && saved.columnOrder && saved.cards) {
           setBoardState(saved);
         } else {
@@ -110,11 +126,25 @@ export default function Home() {
     initBoard();
   }, []);
 
+  // Handle auto-join from URL parameter
+  const autoJoinCheckedRef = useRef(false);
+  useEffect(() => {
+    if (boardState && !autoJoinCheckedRef.current) {
+      autoJoinCheckedRef.current = true;
+      const params = new URLSearchParams(window.location.search);
+      const roomParam = params.get("room");
+      if (roomParam) {
+        connectToRoom(roomParam, boardState);
+      }
+    }
+  }, [boardState, connectToRoom]);
+
   // Save board state helper with local state updates
   const updateBoardState = async (newState: BoardState) => {
     setBoardState(newState);
     setIsSaving(true);
     await saveBoardState(newState);
+    broadcastBoardState(newState);
     setIsSaving(false);
   };
 
@@ -162,6 +192,7 @@ export default function Home() {
   const handleEditCard = (card: TaskCard) => {
     setActiveCard(card);
     setIsModalOpen(true);
+    setEditingCard(card.id);
   };
 
   // Save edited card
@@ -266,6 +297,17 @@ export default function Home() {
     });
   };
 
+  // Calculate remote viewers map
+  const activeCardViewers = peers.reduce((acc, peer) => {
+    if (peer.activeCardId) {
+      if (!acc[peer.activeCardId]) {
+        acc[peer.activeCardId] = [];
+      }
+      acc[peer.activeCardId].push(peer.name);
+    }
+    return acc;
+  }, {} as { [cardId: string]: string[] });
+
   if (!boardState) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-brand-bg text-slate-100 font-mono">
@@ -289,11 +331,11 @@ export default function Home() {
             <h1 className="text-md font-bold tracking-wider text-slate-100 flex items-center gap-2">
               KANBANHARMO
               <span className="text-[10px] bg-brand-accent/20 text-brand-accent px-1.5 py-0.5 rounded-full font-mono uppercase tracking-normal">
-                v1.0-Core
+                v1.1-Collab
               </span>
             </h1>
             <p className="text-[10px] text-slate-400 font-mono tracking-widest uppercase mt-0.5">
-              STATUS: LOCAL DATABASE ACTIVE // TARGETS PERSISTED
+              STATUS: {isConnected ? `CONNECTED TO [${roomId}]` : "LOCAL DATABASE ACTIVE"} // TARGETS PERSISTED
             </p>
           </div>
         </div>
@@ -305,6 +347,20 @@ export default function Home() {
               <RefreshCw size={11} className="animate-spin" /> SYNCING...
             </span>
           )}
+
+          {/* Collaborate Button */}
+          <button
+            onClick={() => setIsCollabOpen(true)}
+            className={`px-4 py-2 border rounded-xs text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+              isConnected
+                ? "border-cyan-400/50 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 shadow-sm shadow-cyan-400/10"
+                : "border-brand-accent/50 bg-brand-accent/5 hover:bg-brand-accent/15 text-brand-accent"
+            }`}
+          >
+            <Radio size={14} className={isConnected ? "animate-pulse" : ""} />
+            {isConnected ? `SQUAD LINKED (${peerCount + 1})` : "COLLABORATE"}
+          </button>
+
           <button
             onClick={handleAddColumn}
             className="px-4 py-2 border border-brand-accent hover:border-brand-accent/80 bg-brand-accent/10 hover:bg-brand-accent/20 text-slate-100 rounded-xs text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
@@ -317,7 +373,6 @@ export default function Home() {
 
       {/* Main Kanban Workspace Container */}
       <main className="flex-1 bg-brand-bg relative overflow-hidden">
-        {/* Subtle abstract hex-pattern overlays or grids */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,85,247,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,85,247,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
         <Board
@@ -327,6 +382,7 @@ export default function Home() {
           onAddCard={handleAddCard}
           onUpdateColumnTitle={handleUpdateColumnTitle}
           onDeleteColumn={handleDeleteColumn}
+          activeCardViewers={activeCardViewers}
         />
       </main>
 
@@ -337,10 +393,28 @@ export default function Home() {
         onClose={() => {
           setIsModalOpen(false);
           setActiveCard(null);
+          setEditingCard(null);
         }}
         onSave={handleSaveCard}
         onDelete={handleDeleteCard}
       />
+
+      {/* Collaborate side drawer overlay */}
+      <CollaborateDrawer
+        isOpen={isCollabOpen}
+        onClose={() => setIsCollabOpen(false)}
+        roomId={roomId}
+        isConnected={isConnected}
+        peerCount={peerCount}
+        peers={peers}
+        localCallsign={localCallsign}
+        onUpdateCallsign={updateCallsign}
+        onConnect={(code) => {
+          if (boardState) connectToRoom(code, boardState);
+        }}
+        onDisconnect={disconnectFromRoom}
+      />
     </div>
   );
 }
+

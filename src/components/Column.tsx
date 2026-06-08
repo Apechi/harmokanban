@@ -14,6 +14,7 @@ interface ColumnProps {
   onAddCard: (columnId: string) => void;
   onUpdateTitle: (columnId: string, newTitle: string) => void;
   onDelete: (columnId: string) => void;
+  activeCardViewers?: { [cardId: string]: string[] };
 }
 
 export default function Column({
@@ -24,6 +25,7 @@ export default function Column({
   onAddCard,
   onUpdateTitle,
   onDelete,
+  activeCardViewers = {},
 }: ColumnProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(column.title);
@@ -150,6 +152,7 @@ export default function Column({
                       card={card}
                       index={cardIndex}
                       onClick={() => onEditCard(card)}
+                      viewers={activeCardViewers[card.id] || []}
                     />
                   ))
                 )}
