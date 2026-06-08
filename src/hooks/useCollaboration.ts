@@ -83,12 +83,13 @@ export function useCollaboration(
     persistenceRef.current = persistence;
 
     // 2. Setup WebRTC Provider
-    // Signaling URL uses current hostname so LAN peers connect to the right IP
+    // In production (HTTPS), only use wss:// servers to avoid mixed-content errors
+    // In development (HTTP), use local signaling server + public fallback
+    const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
     const signalingHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
-    const signalingServers = [
-      `ws://${signalingHost}:4444`,
-      "wss://signaling.yjs.dev",
-    ];
+    const signalingServers = isSecure
+      ? ["wss://signaling.yjs.dev"]
+      : [`ws://${signalingHost}:4444`, "wss://signaling.yjs.dev"];
 
     let provider: WebrtcProvider;
     try {
