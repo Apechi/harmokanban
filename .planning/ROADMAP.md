@@ -2,13 +2,18 @@
 
 ## Overview
 
-KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user value at each phase. We start by building the core board and offline-first persistence (Phase 1), layer on real-time collaborative synchronization using WebRTC and Yjs (Phase 2), and conclude by building the interactive Gantt chart timeline and the automation rule builder (Phase 3).
+KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user value at each phase.
+
+*   **Milestone v1.0** established the core collaborative Kanban & Gantt experience.
+*   **Milestone v2.0** focuses on advanced collaboration, granular time inputs, multi-project workspace partitioning, and role-based permissions.
 
 ## Phases
 
-- [x] **Phase 1: Core Board & Local Persistence** - Drag-and-drop Kanban board, card details checklist, and IndexedDB local persistence
-- [x] **Phase 2: P2P Sync & Real-Time Collaboration** - WebRTC sync using Yjs and online presence indicators
-- [ ] **Phase 3: Gantt Timeline & Automation Builder** - Interactive Gantt view and client-side automation rules engine
+- [x] **Phase 1: Core Board & Local Persistence** - Drag-and-drop Kanban board, card details checklist, and IndexedDB local persistence (Completed)
+- [x] **Phase 2: P2P Sync & Real-Time Collaboration** - WebRTC sync using Yjs and online presence indicators (Completed)
+- [x] **Phase 3: Gantt Timeline & Automation Builder** - Interactive Gantt view and client-side automation rules engine (Completed)
+- [ ] **Phase 4: Multi-Project & Time Management** - Scoped project workspaces with project switcher, and support for exact time inputs on tasks
+- [ ] **Phase 5: Collaborative Presence & Role Controls** - Real-time collaborative cursor tracking, card active indicators, and Editor/Viewer permissions
 
 ## Phase Details
 
@@ -29,6 +34,8 @@ Plans:
 - [x] 01-02: Implement Kanban Board view with column CRUD and drag-and-drop
 - [x] 01-03: Implement Card Details modal, subtasks checklist, custom fields, and local IndexedDB state persistence
 
+---
+
 ### Phase 2: P2P Sync & Real-Time Collaboration
 **Goal:** Enable serverless, real-time collaboration between users using Yjs and WebRTC.
 **Mode:** mvp
@@ -44,6 +51,8 @@ Plans:
 - [x] 02-01: Integrate Yjs doc structure with local IndexedDB provider
 - [x] 02-02: Setup y-webrtc connection sync and connectivity indicator UI
 
+---
+
 ### Phase 3: Gantt Timeline & Automation Builder
 **Goal:** Add timeline visualization and automated workflow rules.
 **Mode:** mvp
@@ -54,19 +63,49 @@ Plans:
   2. Resizing and dragging timeline bars updates card due dates/durations dynamically.
   3. Card automatically moves to Done when subtasks are completed.
   4. User can configure custom Trigger -> Action rules in the builder UI without infinite loop locks.
-**Plans:** TBD
+**Plans:** Completed
 
 Plans:
-- [ ] 03-01: Implement Gantt timeline view using SVG rendering with drag and resize mouse events
-- [ ] 03-02: Build client-side automation engine with loops prevention and Rule Builder UI
+- [x] 03-01: Implement Gantt timeline view using SVG rendering with drag and resize mouse events
+- [x] 03-02: Build client-side automation engine with loops prevention and Rule Builder UI
+
+---
+
+### Phase 4: Multi-Project & Time Management
+**Goal:** Introduce multi-project boundaries so boards and timelines are partitioned per project, and add exact time specification to dates.
+**Mode:** mvp
+**Depends on:** Phase 3
+**Requirements:** PROJ-01, PROJ-02, CARD-06
+**Success Criteria** (what must be TRUE):
+  1. User can create, rename, and delete projects, and switch between projects via a project switcher sidebar/menu.
+  2. Changing the active project dynamically switches the Kanban board and Gantt view, loading only that project's columns, cards, and metadata.
+  3. User can specify exact hours/minutes for task dates in the card modal, with time values correctly persisting and displaying in Kanban and Gantt.
+**Plans:** Pending
+
+---
+
+### Phase 5: Collaborative Presence & Role Controls
+**Goal:** Add real-time visual collaboration cues (cursors and active card indicators) and enforce client-side peer permissions.
+**Mode:** mvp
+**Depends on:** Phase 4
+**Requirements:** SYNC-04, SYNC-05, ROLE-01, ROLE-02
+**Success Criteria** (what must be TRUE):
+  1. Collaborators can view real-time colored cursor pointers showing mouse movement of other users.
+  2. Multi-presence indicators (avatars/badges) are rendered on card elements when multiple users have a card details modal open.
+  3. User can choose a role (Viewer or Editor) when connecting to a room, and Viewer users are restricted from adding, deleting, dragging, or updating tasks.
+**Plans:** Pending
+
+---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Board & Local Persistence | 3/3 | Completed | 2026-06-08 |
 | 2. P2P Sync & Real-Time Collaboration | 2/2 | Completed | 2026-06-08 |
-| 3. Gantt Timeline & Automation Builder | 0/2 | Not started | - |
+| 3. Gantt Timeline & Automation Builder | 2/2 | Completed | 2026-06-08 |
+| 4. Multi-Project & Time Management | 0/0 | Pending | — |
+| 5. Collaborative Presence & Role Controls | 0/0 | Pending | — |

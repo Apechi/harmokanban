@@ -76,16 +76,16 @@
 | AUTO-02 | Phase 3 | Completed |
 | AUTO-03 | Phase 3 | Completed |
 | AUTO-04 | Phase 3 | Completed |
-| PROJ-01 | | Pending |
-| PROJ-02 | | Pending |
-| SYNC-04 | | Pending |
-| SYNC-05 | | Pending |
-| CARD-06 | | Pending |
-| ROLE-01 | | Pending |
-| ROLE-02 | | Pending |
+| PROJ-01 | Phase 4 | Pending |
+| PROJ-02 | Phase 4 | Pending |
+| SYNC-04 | Phase 5 | Pending |
+| SYNC-05 | Phase 5 | Pending |
+| CARD-06 | Phase 4 | Pending |
+| ROLE-01 | Phase 5 | Pending |
+| ROLE-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 18 total | 18 completed
 - v2 requirements: 7 total | 0 completed
-- Mapped to phases: 18 / 25
-- Unmapped: 7 (to be mapped in Phase 4 roadmap)
+- Mapped to phases: 25 / 25
+- Unmapped: 0 ✓
