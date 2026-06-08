@@ -8,16 +8,17 @@ An intuitive and advanced Kanban web application designed specifically for start
 
 Enable rapid, frictionless startup project planning with a highly interactive, collaborative client-side board and Gantt visualization.
 
-## Current Milestone: v2.0 Advanced Collaboration & Multi-Project Support
+## Current Milestone: v3.0 Analytics & Performance Dashboard
 
-**Goal:** Enhance the collaborative capability and structure of KanbanHarmo with multi-project support, role-based controls, and rich real-time visual collaboration cues.
+**Goal:** Provide startup teams with actionable productivity insights, team velocity tracking, and project completion forecasting using real-time client-side analytics.
 
 **Target features:**
-- Project List & Switcher (Kanban board bounded by project)
-- Real-time Cursor Tracking (visual pointers during collaboration)
-- Multi-user Active Card/View Indicators (showing everyone viewing a card in Kanban & Gantt)
-- Due Date & Time Input (allow setting specific times for tasks, not just dates)
-- Role-based Collaboration (define reader/writer or owner/collaborator permissions)
+- State transition history logging in card metadata
+- Interactive SVG Burndown Chart (story points or task count vs ideal line)
+- Velocity Tracker (story points completed over time)
+- Lead Time & Cycle Time statistics
+- Task distribution breakdown (by Column, Priority, Assignee)
+- Interactive Dashboard View with modern tactical UI
 
 ## Requirements
 
@@ -28,19 +29,24 @@ Enable rapid, frictionless startup project planning with a highly interactive, c
 - [x] Rich card details including checklists with progress bars, due dates, priority levels, tags/labels, and custom fields (story points, estimate hours) (Phase 1)
 - [x] Interactive Gantt chart with resizable and draggable task duration bars (Phase 3)
 - [x] Automation rules: auto-move to Done on checklist completion, auto-high priority near due dates, and a custom rule builder UI (Trigger -> Action) (Phase 3)
+- [x] Multi-Project Support with switcher sidebar (Phase 4)
+- [x] Real-time Cursor Tracking and Active Card Presence Indicators (Phase 5)
+- [x] Due Date & exact Time Input support (Phase 4)
+- [x] Role-based Collaboration with Editor/Viewer access controls (Phase 5)
 
 ### Active
 
-- [ ] Project List & Switcher (Kanban board bounded by project)
-- [ ] Real-time Cursor Tracking (visual pointers during collaboration)
-- [ ] Multi-user Active Card/View Indicators (showing everyone viewing a card in Kanban & Gantt)
-- [ ] Due Date & Time Input (allow setting specific times for tasks, not just dates)
-- [ ] Role-based Collaboration (define reader/writer or owner/collaborator permissions)
+- [ ] State transition history logging in card metadata
+- [ ] Interactive SVG Burndown Chart (story points or task count vs ideal line)
+- [ ] Velocity Tracker (story points completed over time)
+- [ ] Lead Time & Cycle Time statistics
+- [ ] Task distribution breakdown (by Column, Priority, Assignee)
+- [ ] Interactive Dashboard View
 
 ### Out of Scope
 
-- [ ] Standard centralized backend database/authentication (v1 focuses purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven)
-- [ ] Analytics dashboards, burndown charts, velocity calculation (deferred to v2)
+- [ ] Standard centralized backend database/authentication (v1, v2 and v3 focus purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven)
+- [ ] Custom external integration plugins, e.g. GitHub sync, slack bot (deferred to v4)
 
 ## Context
 
@@ -78,4 +84,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-08 after Milestone v1.0 completion and v2.0 start*
+*Last updated: 2026-06-09 after Milestone v2.0 completion and v3.0 start*

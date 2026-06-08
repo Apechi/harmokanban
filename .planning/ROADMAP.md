@@ -8,6 +8,7 @@ KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user valu
 
 - ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-06-08)
 - ✅ **v2.0 Advanced Collaboration & Multi-Project Support** - Phases 4-5 (shipped 2026-06-09)
+- ⏳ **v3.0 Analytics & Performance Dashboard** - Phase 6 (planned)
 
 ## Phases
 
@@ -102,12 +103,37 @@ Plans:
 
 </details>
 
+<details open>
+<summary>⏳ v3.0 Analytics & Performance Dashboard (Planned)</summary>
+
+**Milestone Goal:** Provide startup teams with actionable productivity insights, team velocity tracking, and project completion forecasting using real-time client-side analytics.
+
+#### Phase 6: Analytics & Performance Dashboard
+
+**Goal:** Implement a lightweight, client-side analytics and performance dashboard with interactive SVG charts.
+**Depends on:** Phase 5
+**Requirements:** METRIC-01, METRIC-02, METRIC-03, METRIC-04, METRIC-05, METRIC-06, METRIC-07
+**Success Criteria** (what must be TRUE):
+
+  1. Card schema tracks status transition timestamps in local and synced state.
+  2. User can toggle to the Analytics Dashboard view.
+  3. Interactive SVG burndown, velocity, lead/cycle time, and distribution charts are rendered and updated in real-time.
+
+**Plans:**
+
+- [ ] 06-01: Update TaskCard interface and state to record state transition history/timestamps.
+- [ ] 06-02: Create local metrics engine/selectors to calculate burndown trajectories, cycle/lead times, and activity distributions.
+- [ ] 06-03: Implement tactical interactive SVG charts (Burndown, Velocity, and breakdown donut/bar charts).
+- [ ] 06-04: Implement Dashboard view UI with summary cards, toggle navigation, and real-time state sync.
+
+</details>
+
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -116,3 +142,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. Gantt Timeline & Automation Builder | v1.0 | 2/2 | Complete | 2026-06-08 |
 | 4. Multi-Project & Time Management | v2.0 | 1/1 | Complete | 2026-06-08 |
 | 5. Collaborative Presence & Role Controls | v2.0 | 1/1 | Complete | 2026-06-09 |
+| 6. Analytics & Performance Dashboard | v3.0 | 0/4 | Planned | — |
