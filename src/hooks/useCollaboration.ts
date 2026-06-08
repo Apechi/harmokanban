@@ -82,11 +82,35 @@ export function useCollaboration(
     const persistence = new IndexeddbPersistence(cleanRoomCode, doc);
     persistenceRef.current = persistence;
 
-    // 2. Setup WebRTC Provider
-    const provider = new WebrtcProvider(cleanRoomCode, doc, {
-      signaling: ["wss://signaling.yjs.dev"],
-    });
+    // 2. Setup WebRTC Provider with multiple signaling servers for resilience
+    const signalingServers = [
+      "wss://y-webrtc-signaling-eu.herokuapp.com",
+      "wss://y-webrtc-signaling-us.herokuapp.com",
+      "wss://signaling.yjs.dev",
+    ];
+
+    let provider: WebrtcProvider;
+    try {
+      provider = new WebrtcProvider(cleanRoomCode, doc, {
+        signaling: signalingServers,
+      });
+    } catch (err) {
+      console.warn("WebRTC provider failed to initialize, falling back to local-only mode:", err);
+      setIsConnected(false);
+      return;
+    }
     providerRef.current = provider;
+
+    // Track actual WebRTC connection status
+    provider.on("synced", ({ synced }: { synced: boolean }) => {
+      setIsConnected(synced || provider.connected);
+    });
+
+    // Handle connection status changes
+    const checkConnection = () => {
+      setIsConnected(provider.connected);
+    };
+    provider.on("peers", checkConnection);
 
     // Set local presence
     provider.awareness.setLocalStateField("user", {
