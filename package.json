@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:signal": "node -e \"process.env.PORT=4444; require('./node_modules/y-webrtc/bin/server.js')\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
