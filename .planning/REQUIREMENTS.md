@@ -3,58 +3,56 @@
 **Defined:** 2026-06-08
 **Core Value:** Enable rapid, frictionless startup project planning with a highly interactive, collaborative client-side board and Gantt visualization.
 
-## v1 Requirements
+## v1 Requirements (Completed)
 
 ### Board Management (BOARD)
-
-- [ ] **BOARD-01**: User can view a Kanban board with default columns (Todo, In Progress, Done)
-- [ ] **BOARD-02**: User can create, rename, delete, and reorder columns
-- [ ] **BOARD-03**: User can drag and drop cards within a column and between columns with smooth animations
-- [ ] **BOARD-04**: Board state persists locally to IndexedDB/localStorage so that data loads immediately on refresh
+- [x] **BOARD-01**: User can view a Kanban board with default columns (Todo, In Progress, Done)
+- [x] **BOARD-02**: User can create, rename, delete, and reorder columns
+- [x] **BOARD-03**: User can drag and drop cards within a column and between columns with smooth animations
+- [x] **BOARD-04**: Board state persists locally to IndexedDB/localStorage so that data loads immediately on refresh
 
 ### Card details & Customization (CARD)
-
-- [ ] **CARD-01**: User can create and delete cards inside columns
-- [ ] **CARD-02**: User can edit card title, description, and assign custom tags/labels
-- [ ] **CARD-03**: User can set task priority levels (Low, Medium, High) with visual indicators
-- [ ] **CARD-04**: User can add a checklist of subtasks to a card and view a checklist completion progress bar
-- [ ] **CARD-05**: User can set start dates, due dates, and custom fields (story points, estimate hours)
+- [x] **CARD-01**: User can create and delete cards inside columns
+- [x] **CARD-02**: User can edit card title, description, and assign custom tags/labels
+- [x] **CARD-03**: User can set task priority levels (Low, Medium, High) with visual indicators
+- [x] **CARD-04**: User can add a checklist of subtasks to a card and view a checklist completion progress bar
+- [x] **CARD-05**: User can set start dates, due dates, and custom fields (story points, estimate hours)
 
 ### P2P Sync & Real-time Collaboration (SYNC)
-
-- [x] SYNC-01: User can connect to a shared collaborative room by specifying a Room ID
-- [x] SYNC-02: Board updates sync instantly between users in the same room via P2P WebRTC using Yjs
-- [x] SYNC-03: User can see a network status indicator showing active peer connections
+- [x] **SYNC-01**: User can connect to a shared collaborative room by specifying a Room ID
+- [x] **SYNC-02**: Board updates sync instantly between users in the same room via P2P WebRTC using Yjs
+- [x] **SYNC-03**: User can see a network status indicator showing active peer connections
 
 ### Gantt Planning (GANTT)
-
-- [ ] GANTT-01: User can switch to a Gantt timeline view displaying cards as horizontal duration bars
-- [ ] GANTT-02: User can drag task duration bars to update start/due dates, and resize bars to extend/shorten duration
+- [x] **GANTT-01**: User can switch to a Gantt timeline view displaying cards as horizontal duration bars
+- [x] **GANTT-02**: User can drag task duration bars to update start/due dates, and resize bars to extend/shorten duration
 
 ### Automations Builder (AUTO)
+- [x] **AUTO-01**: Card automatically moves to the 'Done' column when all checklist subtasks are completed
+- [x] **AUTO-02**: Card priority automatically updates to 'High' when it is within 24 hours of its due date
+- [x] **AUTO-03**: User can configure basic Trigger -> Action rules using a declarative Rule Builder UI
+- [x] **AUTO-04**: Automations engine handles updates without entering infinite recursion loops (using transaction metadata tags)
 
-- [ ] AUTO-01: Card automatically moves to the 'Done' column when all checklist subtasks are completed
-- [ ] AUTO-02: Card priority automatically updates to 'High' when it is within 24 hours of its due date
-- [ ] AUTO-03: User can configure basic Trigger -> Action rules using a declarative Rule Builder UI
-- [ ] AUTO-04: Automations engine handles updates without entering infinite recursion loops (using transaction metadata tags)
+## v2 Requirements (Active)
 
-## v2 Requirements
+### Multi-Project Support (PROJ)
+- [ ] **PROJ-01**: User can create, rename, and delete projects, and switch between projects using a project switcher UI.
+- [ ] **PROJ-02**: The Kanban board and Gantt timeline views, cards, and state are scoped exclusively to the currently active project.
 
-### Analytics & Reports
+### Collaboration Enhancements (SYNC)
+- [ ] **SYNC-04**: Real-time cursor pointers of online collaborators are displayed on the board and Gantt view, indicating cursor positions with user name callsigns and colors.
+- [ ] **SYNC-05**: Multi-user avatars/indicators are displayed on cards in both Kanban and Gantt views when multiple users have a card details modal open.
 
-- **ANL-01**: Burn-down charts and velocity tracking dashboard
+### Scheduling Details (CARD)
+- [ ] **CARD-06**: User can specify an exact time (hours and minutes) alongside the date for task start and due dates, which displays readably on the card and timeline.
 
-### Centralized Storage & Auth
-
-- **DB-01**: Centralized OAuth database authentication (Google, GitHub)
-- **DB-02**: Cloud database backup and sync persistence
+### Role-Based Access (ROLE)
+- [ ] **ROLE-01**: User can select a role (e.g., Editor or Viewer) when connecting to a room.
+- [ ] **ROLE-02**: UI interactions (adding/editing cards, checklist updates, drag-and-drop, and triggers execution) are blocked when the user has the Viewer role.
 
 ## Out of Scope
-
-| Feature | Reason |
-|---------|--------|
-| Centralized backend server | Deferring to keep the application serverless and P2P first |
-| File attachments storage | Browser-based storage allocation constraints |
+- [ ] Standard centralized backend database/authentication (v1 and v2 focus purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven).
+- [ ] Analytics dashboards, burndown charts, velocity calculation (deferred to v3).
 
 ## Traceability
 
@@ -72,18 +70,22 @@
 | SYNC-01 | Phase 2 | Completed |
 | SYNC-02 | Phase 2 | Completed |
 | SYNC-03 | Phase 2 | Completed |
-| GANTT-01 | Phase 3 | Pending |
-| GANTT-02 | Phase 3 | Pending |
-| AUTO-01 | Phase 3 | Pending |
-| AUTO-02 | Phase 3 | Pending |
-| AUTO-03 | Phase 3 | Pending |
-| AUTO-04 | Phase 3 | Pending |
+| GANTT-01 | Phase 3 | Completed |
+| GANTT-02 | Phase 3 | Completed |
+| AUTO-01 | Phase 3 | Completed |
+| AUTO-02 | Phase 3 | Completed |
+| AUTO-03 | Phase 3 | Completed |
+| AUTO-04 | Phase 3 | Completed |
+| PROJ-01 | | Pending |
+| PROJ-02 | | Pending |
+| SYNC-04 | | Pending |
+| SYNC-05 | | Pending |
+| CARD-06 | | Pending |
+| ROLE-01 | | Pending |
+| ROLE-02 | | Pending |
 
 **Coverage:**
-- v1 requirements: 18 total
-- Mapped to phases: 18
-- Unmapped: 0 ✓
-
----
-*Requirements defined: 2026-06-08*
-*Last updated: 2026-06-08 after initial definition*
+- v1 requirements: 18 total | 18 completed
+- v2 requirements: 7 total | 0 completed
+- Mapped to phases: 18 / 25
+- Unmapped: 7 (to be mapped in Phase 4 roadmap)
