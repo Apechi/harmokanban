@@ -1,117 +1,42 @@
 # Feature Research
 
-**Domain:** Kanban Board Webapp (P2P Real-Time Collaboration)
-**Researched:** 2026-06-08
-**Confidence:** HIGH
+This document outlines feature behaviors, UX expectations, and technical scoping for the new collaboration and project management features.
 
-## Feature Landscape
+## Feature Breakdown
 
-### Table Stakes (Users Expect These)
+### 1. Project List & Switcher
+- **Table Stakes**:
+  - User can create a new project with a name and description.
+  - User can view a dropdown or list of projects.
+  - Switching projects reloads the Kanban board and Gantt timeline with that project's tasks.
+  - Active project ID is stored in the URL (e.g. `?projectId=xyz`) or local state.
+- **Data Model**:
+  - The root Yjs document can hold a map of projects: `yRootMap.get('projects')`.
+  - Each project has its own board state (columns, cards, columnOrder).
 
-Features users assume exist. Missing these = product feels incomplete.
+### 2. Real-Time Cursor Tracking
+- **Table Stakes**:
+  - Throttle mouse movements (e.g., 50-100ms) to avoid network congestion.
+  - Transmit relative cursor positions (percentage of container width/height or absolute viewport coordinates with header adjustments).
+  - Render cursors with a visual pointer, user name (callsign), and distinct colors.
+- **UX/Aesthetics**:
+  - Use CSS transitions (`transition: all 0.1s ease-out`) for smooth movement instead of jittery updates.
+  - Fade out cursors when the user is inactive or leaves the tab.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Kanban Board view | Core view for task tracking and drag-and-drop movement between columns | MEDIUM | Needs smooth, accessible drag-and-drop using @hello-pangea/dnd |
-| Columns management | Add, edit, delete, and reorder columns (e.g., Todo, In Progress, Done) | LOW | Simple list state management |
-| Card creation & details | Title, description, due date, priority levels (Low, Medium, High), and tags | LOW | Basic model forms and modal view |
-| Subtask Checklist | Break down tasks into subtasks with checklist progress indicator/bar | LOW | Embedded subtask array within the card structure |
-| Local persistence | Data must persist when reloading the page | LOW | y-indexeddb or localStorage integration |
+### 3. Active User Indicators (Kanban & Gantt)
+- **Table Stakes**:
+  - Show a list of avatar/badge elements on each task card indicating who has that card's details modal open.
+  - Show similar indicators in the Gantt timeline.
+  - Synchronize this presence via Yjs awareness state (e.g., `state.viewingCardId = cardId`).
 
-### Differentiators (Competitive Advantage)
+### 4. Due Date & Time Fields
+- **Table Stakes**:
+  - Date inputs must support time specification (e.g. `2026-06-08T16:00`).
+  - Render due dates on cards as readable strings (e.g., "June 8, 4:00 PM").
+  - The automation engine should respect due times as well (e.g. triggering 24h before exact due time).
 
-Features that set the product apart. Not required, but valuable.
-
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| P2P Real-Time Sync | Collaboration without a central database, ensuring fast updates and high privacy | HIGH | Yjs + y-webrtc integration |
-| Interactive Gantt Chart | Visual planning of task durations and dependencies via resizable/draggable timeline bars | HIGH | SVG or Canvas timeline rendering with custom mouse/touch event handling |
-| Automations Builder | Simple UI to configure 'Trigger -> Action' rules (e.g., auto-move on checklist complete) | MEDIUM | State listeners that evaluate triggers and apply modifications |
-
-### Anti-Features (Commonly Requested, Often Problematic)
-
-Features that seem good but create problems.
-
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Full WebSockets Server | Centralized collaborative server | High server costs, setup complexity, database sync maintenance | y-webrtc with lightweight signaling peers |
-| Complex custom database integration | Enterprise authentication and cloud DB support | Slows down initial validation, increases infrastructure requirements | local-first client-side IndexedDB persistence + WebRTC sync |
-
-## Feature Dependencies
-
-```
-[Real-Time Sync]
-    └──requires──> [Local persistence / IndexedDB]
-                       └──requires──> [Kanban Board view]
-
-[Interactive Gantt Chart] ──enhances──> [Card due dates / start dates]
-
-[Automations Builder] ──mutates──> [Kanban Board view / Card properties]
-```
-
-### Dependency Notes
-
-- **Real-Time Sync requires Local persistence**: Synchronized CRDT documents need local storage mapping (y-indexeddb) to load instantly offline before connecting to peers.
-- **Interactive Gantt Chart enhances Card due dates**: The timeline visually changes start and due dates by resizing or dragging task bars.
-- **Automations Builder mutates Kanban Board view**: Rules automatically change card columns or fields when events (like checklist completion) trigger.
-
-## MVP Definition
-
-### Launch With (v1)
-
-Minimum viable product — what's needed to validate the concept.
-
-- [ ] Core Kanban Board — Drag-and-drop cards and customizable columns.
-- [ ] Card Details — Title, description, due dates, priority levels, subtask checklists, and custom tags.
-- [ ] Local Offline Sync — IndexedDB local state persistence.
-- [ ] P2P Collaboration — Real-time synchronization over WebRTC using Yjs.
-- [ ] Interactive Gantt Chart — Visual timeline with resizable and draggable task duration bars.
-- [ ] Automation Rules — Auto-move card on checklist completion, auto-priority updates, and a basic trigger/action builder.
-
-### Add After Validation (v1.x)
-
-Features to add once core is working.
-
-- [ ] File attachments — P2P file sharing or local browser storage allocation.
-- [ ] Advanced Filters & Search — Custom board querying.
-
-### Future Consideration (v2+)
-
-Features to defer until product-market fit is established.
-
-- [ ] Burn-down charts and velocity analytics dashboards.
-- [ ] Centralized cloud authentication (Google/GitHub OAuth) & Postgres database backend.
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Kanban Board view | HIGH | MEDIUM | P1 |
-| Card details & subtasks | HIGH | LOW | P1 |
-| Local IndexedDB storage | HIGH | LOW | P1 |
-| Yjs P2P WebRTC sync | HIGH | HIGH | P1 |
-| Interactive Gantt view | HIGH | HIGH | P1 |
-| Automations engine/UI | MEDIUM | MEDIUM | P1 |
-
-**Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
-- P3: Nice to have, future consideration
-
-## Competitor Feature Analysis
-
-| Feature | Competitor A (Trello) | Competitor B (Linear) | Our Approach |
-|---------|-----------------------|-----------------------|--------------|
-| Collaboration | Centralized database sync | Highly optimized server-client sync | Serverless P2P CRDT sync via Yjs/WebRTC |
-| Gantt Timeline | Premium add-on / paid plan | Paid subscription only | Free, fully local-first interactive Gantt view |
-| Automations | Butler bots (cloud execution) | Custom webhooks / manual rules | Built-in client-side trigger-action engine |
-
-## Sources
-
-- Yjs features and performance — https://yjs.dev
-- Trello power-ups research — https://trello.com
-- Linear product design documentation — https://linear.app
-
----
-*Feature research for: Kanban Board Webapp (P2P Real-Time Collaboration)*
-*Researched: 2026-06-08*
+### 5. Role-based Collaboration
+- **Table Stakes**:
+  - Peer role defined locally when connecting (e.g., Creator/Editor or Viewer).
+  - Viewer role disables edit buttons, drags, checklist checking, and card creation.
+  - Role synced in Yjs awareness so other users see "Amiya-451 (Viewer)".
