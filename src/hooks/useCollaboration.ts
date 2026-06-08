@@ -83,13 +83,13 @@ export function useCollaboration(
     persistenceRef.current = persistence;
 
     // 2. Setup WebRTC Provider
-    // In production (HTTPS), only use wss:// servers to avoid mixed-content errors
-    // In development (HTTP), use local signaling server + public fallback
+    // Production: use env var or public fallback. Dev: use local signaling server.
     const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
     const signalingHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
+    const prodSignaling = process.env.NEXT_PUBLIC_SIGNALING_URL || "wss://signaling.yjs.dev";
     const signalingServers = isSecure
-      ? ["wss://signaling.yjs.dev"]
-      : [`ws://${signalingHost}:4444`, "wss://signaling.yjs.dev"];
+      ? [prodSignaling]
+      : [`ws://${signalingHost}:4444`, prodSignaling];
 
     let provider: WebrtcProvider;
     try {
