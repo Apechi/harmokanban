@@ -108,3 +108,17 @@ body {
   box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
 }
 
+/* Atmospheric Tactical Background Overlay */
+.tactical-bg-overlay {
+  position: fixed;
+  inset: 0;
+  background-image: url('/bg.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.04; /* Very subtle texture to preserve high readability and dark contrast */
+  pointer-events: none;
+  z-index: 5; /* Overlays the main layout grid and columns but sits behind headers, sidebars, and modals */
+}
+
+
