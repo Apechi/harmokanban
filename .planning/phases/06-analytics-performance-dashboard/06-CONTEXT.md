@@ -70,7 +70,7 @@ This phase implements a lightweight, client-side analytics and performance dashb
 
 <deferred>
 ## Deferred Ideas
-- None — discussion stayed within phase scope
+- Custom styling import/export — Allow users to import and export board style configurations to customize their own Kanban theme.
 </deferred>
 
 ---

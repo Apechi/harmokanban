@@ -31,7 +31,7 @@
 
 ## Deferred Ideas
 
-- None.
+- Custom styling import/export: Allow users to import and export board styling configurations to customize their own Kanban theme.
 
 ---
 
