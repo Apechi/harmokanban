@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #0a0512;
+  --color-brand-card: #130a21;
+  --color-brand-accent: #a855f7;
+  --color-brand-destructive: #f43f5e;
+  
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular;
+}
+
+:root {
+  --background: #0a0512;
+  --foreground: #f8fafc;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Custom Tactical Arknights-Style CSS Utilities */
+
+.tacticool-card {
+  position: relative;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  background: rgba(19, 10, 33, 0.85);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.05);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tacticool-card:hover {
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+  border-color: rgba(168, 85, 247, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Tactical Corner Brackets */
+.tacticool-card::before,
+.tacticool-card::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: #a855f7;
+  border-style: solid;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+
+/* Top-left corner bracket */
+.tacticool-card::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+
+/* Bottom-right corner bracket */
+.tacticool-card::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1px 1px 0;
+}
+
+.tacticool-card:hover::before {
+  width: 12px;
+  height: 12px;
+}
+
+.tacticool-card:hover::after {
+  width: 12px;
+  height: 12px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0512;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.6);
+}
+
+/* Monospace stats label */
+.tactical-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Graffiti badges custom background colors */
+.graffiti-tag {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  transform: rotate(-1deg);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
+}
+
