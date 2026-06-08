@@ -115,8 +115,11 @@ export default function Home() {
     peerCount,
     peers,
     localCallsign,
+    localUserId,
+    isOwner,
     localRole,
     updateLocalRole,
+    changePeerRole,
     updateCallsign,
     connectToRoom,
     disconnectFromRoom,
@@ -683,9 +686,12 @@ export default function Home() {
         peerCount={peerCount}
         peers={peers}
         localCallsign={localCallsign}
+        localUserId={localUserId}
+        isOwner={isOwner}
         localRole={localRole}
         onUpdateCallsign={updateCallsign}
         onUpdateRole={updateLocalRole}
+        onChangePeerRole={changePeerRole}
         onConnect={(code) => {
           if (boardState) connectToRoom(code, boardState);
         }}

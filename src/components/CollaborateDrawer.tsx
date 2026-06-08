@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { 
-  X, Copy, Check, Users, ShieldAlert, RefreshCw, LogOut, Radio, UserPlus
+  X, Copy, Check, Users, ShieldAlert, RefreshCw, LogOut, Radio, UserPlus, Crown
 } from "lucide-react";
 import { getRandomOperatorCallsign } from "@/lib/collaboration";
 
 interface PeerInfo {
   id: number;
+  userId: string;
   name: string;
   activeCardId: string | null;
   role: "editor" | "viewer";
@@ -22,9 +23,12 @@ interface CollaborateDrawerProps {
   peerCount: number;
   peers: PeerInfo[];
   localCallsign: string;
+  localUserId: string;
+  isOwner: boolean;
   localRole: "editor" | "viewer";
   onUpdateCallsign: (newCallsign: string) => void;
   onUpdateRole: (role: "editor" | "viewer") => void;
+  onChangePeerRole: (peerUserId: string, role: "editor" | "viewer") => void;
   onConnect: (roomId: string) => void;
   onDisconnect: () => void;
 }
@@ -37,9 +41,12 @@ export default function CollaborateDrawer({
   peerCount,
   peers,
   localCallsign,
+  localUserId,
+  isOwner,
   localRole,
   onUpdateCallsign,
   onUpdateRole,
+  onChangePeerRole,
   onConnect,
   onDisconnect,
 }: CollaborateDrawerProps) {
@@ -228,35 +235,60 @@ export default function CollaborateDrawer({
                 <div className="text-[10px] text-slate-400 uppercase tracking-widest mb-2">
                   OPERATOR ROLE & PERMISSIONS
                 </div>
-                <div className="flex bg-brand-bg/60 p-0.5 border border-brand-accent/20 rounded-xs">
-                  <button
-                    type="button"
-                    onClick={() => onUpdateRole("editor")}
-                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer text-center ${
-                      localRole === "editor"
-                        ? "bg-brand-accent text-white"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    Editor
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onUpdateRole("viewer")}
-                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer text-center ${
-                      localRole === "viewer"
-                        ? "bg-slate-700 text-white"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    Viewer
-                  </button>
-                </div>
-                <div className="text-[9px] text-slate-500 mt-2">
-                  {localRole === "editor"
-                    ? "FULL ACCESS: Can create, update, delete, and reorder tasks."
-                    : "READ-ONLY: Restricted from editing columns, tasks, or moving items."}
-                </div>
+                {isConnected ? (
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center bg-brand-bg/60 px-3 py-2 border border-brand-accent/20 rounded-xs">
+                      <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                        {isOwner && <Crown size={12} className="text-yellow-400" />}
+                        {isOwner ? "Room Owner / Editor" : localRole === "editor" ? "Editor" : "Viewer"}
+                      </span>
+                      {isOwner ? (
+                        <span className="text-[10px] text-brand-accent font-mono">👑 OWNER</span>
+                      ) : (
+                        <span className="text-[10px] text-slate-450 font-mono">ENFORCED</span>
+                      )}
+                    </div>
+                    <div className="text-[9px] text-slate-500 mt-2 leading-relaxed">
+                      {isOwner 
+                        ? "You are the Room Owner. You have full edit access and can manage roles of other operators." 
+                        : localRole === "editor"
+                        ? "FULL ACCESS: Enforced by Room Owner. Can edit, drag, and update tasks."
+                        : "READ-ONLY: Enforced by Room Owner. Restricted from editing or moving items."}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex bg-brand-bg/60 p-0.5 border border-brand-accent/20 rounded-xs">
+                      <button
+                        type="button"
+                        onClick={() => onUpdateRole("editor")}
+                        className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer text-center ${
+                          localRole === "editor"
+                            ? "bg-brand-accent text-white"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        Editor
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateRole("viewer")}
+                        className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer text-center ${
+                          localRole === "viewer"
+                            ? "bg-slate-700 text-white"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        Viewer
+                      </button>
+                    </div>
+                    <div className="text-[9px] text-slate-500 mt-2">
+                      {localRole === "editor"
+                        ? "FULL ACCESS: Can create, update, delete, and reorder tasks."
+                        : "READ-ONLY: Restricted from editing columns, tasks, or moving items."}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Join / Host Room Form */}
@@ -303,15 +335,18 @@ export default function CollaborateDrawer({
 
                   <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
                     {/* Local Operator */}
-                    <div className="flex items-center justify-between py-1 px-2.5 bg-brand-accent/5 border border-brand-accent/10 rounded-xs text-xs">
+                    <div className="flex items-center justify-between py-1.5 px-2.5 bg-brand-accent/5 border border-brand-accent/15 rounded-xs text-xs">
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-ping" />
-                        <span className="font-semibold text-slate-200">{localCallsign}</span>
+                        <span className="font-semibold text-slate-200 flex items-center gap-1">
+                          {localCallsign}
+                          {isOwner && <Crown size={11} className="text-yellow-400 inline" />}
+                        </span>
                         <span className={`text-[8px] border px-1 rounded-xs font-mono font-bold tracking-wider uppercase ${localRole === "viewer" ? "border-slate-500/30 text-slate-400 bg-slate-500/10" : "border-brand-accent/30 text-brand-accent bg-brand-accent/10"}`}>
-                          {localRole}
+                          {isOwner ? "owner" : localRole}
                         </span>
                       </div>
-                      <span className="text-[9px] bg-brand-accent/20 text-brand-accent px-1.5 py-0.5 rounded-xs tracking-wider uppercase">
+                      <span className="text-[9px] bg-brand-accent/20 text-brand-accent px-1.5 py-0.5 rounded-xs tracking-wider uppercase font-bold">
                         YOU
                       </span>
                     </div>
@@ -320,18 +355,32 @@ export default function CollaborateDrawer({
                     {peers.map((peer) => (
                       <div
                         key={peer.id}
-                        className="flex items-center justify-between py-1 px-2.5 bg-brand-bg/40 border border-slate-800 rounded-xs text-xs"
+                        className="flex items-center justify-between py-1.5 px-2.5 bg-brand-bg/40 border border-slate-800 rounded-xs text-xs"
                       >
                         <div className="flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                           <span className="font-semibold text-slate-300">{peer.name}</span>
-                          <span className={`text-[8px] border px-1 rounded-xs font-mono font-bold tracking-wider uppercase ${peer.role === "viewer" ? "border-slate-500/30 text-slate-400 bg-slate-500/10" : "border-brand-accent/30 text-brand-accent bg-brand-accent/10"}`}>
-                            {peer.role}
-                          </span>
+                          
+                          {/* Owner controls remote operator roles, otherwise just shows static badge */}
+                          {isOwner ? (
+                            <select
+                              value={peer.role}
+                              onChange={(e) => onChangePeerRole(peer.userId, e.target.value as "editor" | "viewer")}
+                              className="bg-brand-card text-slate-200 border border-brand-accent/30 rounded-xs text-[9px] py-0.5 px-1 focus:outline-hidden focus:border-brand-accent font-mono cursor-pointer uppercase"
+                            >
+                              <option value="editor">Editor</option>
+                              <option value="viewer">Viewer</option>
+                            </select>
+                          ) : (
+                            <span className={`text-[8px] border px-1 rounded-xs font-mono font-bold tracking-wider uppercase ${peer.role === "viewer" ? "border-slate-500/30 text-slate-400 bg-slate-500/10" : "border-brand-accent/30 text-brand-accent bg-brand-accent/10"}`}>
+                              {peer.role}
+                            </span>
+                          )}
                         </div>
+                        
                         {peer.activeCardId && (
-                          <span className="text-[9px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-1.5 py-0.5 rounded-xs tracking-wider uppercase animate-pulse">
-                            VIEWING DEPLOYMENT
+                          <span className="text-[8px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-1 py-0.5 rounded-xs tracking-wider uppercase animate-pulse">
+                            VIEWING CARD
                           </span>
                         )}
                       </div>

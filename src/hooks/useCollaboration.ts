@@ -13,8 +13,9 @@ import {
 } from "@/lib/collaboration";
 import { saveBoardState } from "@/lib/db";
 
-interface PeerInfo {
+export interface PeerInfo {
   id: number;
+  userId: string;
   name: string;
   activeCardId: string | null;
   role: "editor" | "viewer";
@@ -39,6 +40,21 @@ export function useCollaboration(
     }
     return "";
   });
+  
+  // Persistent local user ID
+  const [localUserId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      let id = localStorage.getItem("squad-operator-id");
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem("squad-operator-id", id);
+      }
+      return id;
+    }
+    return "";
+  });
+
+  const [ownerId, setOwnerId] = useState<string | null>(null);
   const [localRole, setLocalRole] = useState<"editor" | "viewer">("editor");
 
   const ydocRef = useRef<Y.Doc | null>(null);
@@ -56,32 +72,41 @@ export function useCollaboration(
     }
   }, [localCallsign]);
 
+  // Synchronize local user presence to Yjs awareness when fields change
+  useEffect(() => {
+    if (providerRef.current) {
+      const currentPresence = providerRef.current.awareness.getLocalState()?.user || {};
+      providerRef.current.awareness.setLocalStateField("user", {
+        ...currentPresence,
+        userId: localUserId,
+        name: localCallsign || "Operator",
+        role: localRole,
+      });
+    }
+  }, [localCallsign, localRole, localUserId, isConnected]);
+
   // Update callsign function
   const updateCallsign = (newCallsign: string) => {
     const trimmed = newCallsign.trim();
     if (!trimmed) return;
     setLocalCallsign(trimmed);
     localStorage.setItem("squad-operator-callsign", trimmed);
-
-    if (providerRef.current) {
-      const currentPresence = providerRef.current.awareness.getLocalState()?.user || {};
-      providerRef.current.awareness.setLocalStateField("user", {
-        ...currentPresence,
-        name: trimmed,
-      });
-    }
   };
 
-  // Update local role function
+  // Change remote peer role (invoked by owner)
+  const changePeerRole = (peerUserId: string, role: "editor" | "viewer") => {
+    if (!ydocRef.current) return;
+    const yMetaMap = ydocRef.current.getMap("room-metadata");
+    const currentOwner = yMetaMap.get("ownerId") as string | undefined;
+    if (currentOwner !== localUserId) return; // Only owner can change roles
+
+    const yRolesMap = ydocRef.current.getMap("room-roles");
+    yRolesMap.set(peerUserId, role);
+  };
+
+  // Update local role function (internal / fallback)
   const updateLocalRole = (role: "editor" | "viewer") => {
     setLocalRole(role);
-    if (providerRef.current) {
-      const currentPresence = providerRef.current.awareness.getLocalState()?.user || {};
-      providerRef.current.awareness.setLocalStateField("user", {
-        ...currentPresence,
-        role,
-      });
-    }
   };
 
   // Update cursor position function
@@ -110,13 +135,14 @@ export function useCollaboration(
     ydocRef.current = doc;
 
     const yRootMap = doc.getMap("board-root");
+    const yMetaMap = doc.getMap("room-metadata");
+    const yRolesMap = doc.getMap("room-roles");
 
     // 1. Setup offline persistence for the room document
     const persistence = new IndexeddbPersistence(cleanRoomCode, doc);
     persistenceRef.current = persistence;
 
     // 2. Setup WebRTC Provider
-    // Production: use env var or public fallback. Dev: use local signaling server.
     const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
     const signalingHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
     const prodSignaling = process.env.NEXT_PUBLIC_SIGNALING_URL || "wss://signaling.yjs.dev";
@@ -144,12 +170,54 @@ export function useCollaboration(
       setIsConnected(connected);
     });
 
-    // Set local presence
+    // Set local presence immediately
     provider.awareness.setLocalStateField("user", {
+      userId: localUserId,
       name: localCallsign || "Operator",
       activeCardId: null,
       role: localRole,
       cursor: null,
+    });
+
+    // Determine initial owner and roles
+    const setupRoomOwnershipAndRoles = () => {
+      // 1. Set owner if not present (P2P first joiner is owner)
+      if (!yMetaMap.has("ownerId")) {
+        yMetaMap.set("ownerId", localUserId);
+      }
+      
+      const currentOwnerId = yMetaMap.get("ownerId") as string;
+      setOwnerId(currentOwnerId);
+
+      // 2. Determine local role
+      if (localUserId === currentOwnerId) {
+        setLocalRole("editor");
+      } else {
+        const assignedRole = yRolesMap.get(localUserId) as "editor" | "viewer" | undefined;
+        setLocalRole(assignedRole || "viewer");
+      }
+    };
+
+    // Observe changes on room metadata and roles
+    yMetaMap.observe(() => {
+      const currentOwnerId = yMetaMap.get("ownerId") as string | undefined;
+      if (currentOwnerId) {
+        setOwnerId(currentOwnerId);
+        if (localUserId === currentOwnerId) {
+          setLocalRole("editor");
+        } else {
+          const assignedRole = yRolesMap.get(localUserId) as "editor" | "viewer" | undefined;
+          setLocalRole(assignedRole || "viewer");
+        }
+      }
+    });
+
+    yRolesMap.observe(() => {
+      const currentOwnerId = yMetaMap.get("ownerId") as string | undefined;
+      if (localUserId !== currentOwnerId) {
+        const assignedRole = yRolesMap.get(localUserId) as "editor" | "viewer" | undefined;
+        setLocalRole(assignedRole || "viewer");
+      }
     });
 
     // 3. Handle awareness / presence updates
@@ -157,13 +225,14 @@ export function useCollaboration(
       const states = provider.awareness.getStates();
       const newPeers: PeerInfo[] = [];
       states.forEach((state: unknown, clientID) => {
-        const presence = state as { user?: { name: string; activeCardId?: string | null; role?: "editor" | "viewer"; cursor?: { x: number; y: number } | null } };
+        const presence = state as { user?: { userId?: string; name: string; activeCardId?: string | null; role?: "editor" | "viewer"; cursor?: { x: number; y: number } | null } };
         if (clientID !== doc.clientID && presence.user) {
           newPeers.push({
             id: clientID,
+            userId: presence.user.userId || "",
             name: presence.user.name,
             activeCardId: presence.user.activeCardId || null,
-            role: presence.user.role || "editor",
+            role: presence.user.role || "viewer",
             cursor: presence.user.cursor || null,
           });
         }
@@ -176,7 +245,9 @@ export function useCollaboration(
 
     // Wait for local IndexedDB updates to load
     persistence.once("synced", async () => {
-      // Check if room map is empty
+      setupRoomOwnershipAndRoles();
+
+      // Check if room board map is empty
       const hasData = yRootMap.has("columnOrder");
 
       if (!hasData) {
@@ -229,6 +300,8 @@ export function useCollaboration(
     setIsConnected(false);
     setPeerCount(0);
     setPeers([]);
+    setOwnerId(null);
+    setLocalRole("editor");
   };
 
   // Broadcast card editing presence info
@@ -263,8 +336,12 @@ export function useCollaboration(
     peerCount,
     peers,
     localCallsign,
+    localUserId,
+    ownerId,
+    isOwner: localUserId === ownerId,
     localRole,
     updateLocalRole,
+    changePeerRole,
     updateCallsign,
     connectToRoom,
     disconnectFromRoom,
