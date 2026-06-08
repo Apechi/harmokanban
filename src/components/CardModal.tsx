@@ -31,14 +31,20 @@ export default function CardModal({
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState("");
 
+  const toDateTimeLocalString = (val: string | null | undefined): string => {
+    if (!val) return "";
+    if (val.includes("T")) return val;
+    return `${val}T00:00`;
+  };
+
   // Sync state with card prop
   useEffect(() => {
     if (card) {
       setTitle(card.title);
       setDescription(card.description || "");
       setPriority(card.priority);
-      setDueDate(card.dueDate || "");
-      setStartDate(card.startDate || "");
+      setDueDate(toDateTimeLocalString(card.dueDate));
+      setStartDate(toDateTimeLocalString(card.startDate));
       setStoryPoints(card.storyPoints);
       setTags(card.tags || []);
       setTagsInput(card.tags ? card.tags.join(", ") : "");
@@ -199,10 +205,10 @@ export default function CardModal({
                 {/* Start Date */}
                 <div className="space-y-1">
                   <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                    <Calendar size={11} /> START DATE
+                    <Calendar size={11} /> START DATE & TIME
                   </label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono"
@@ -212,10 +218,10 @@ export default function CardModal({
                 {/* Due Date */}
                 <div className="space-y-1">
                   <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                    <Calendar size={11} /> DUE DATE
+                    <Calendar size={11} /> DUE DATE & TIME
                   </label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                     className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono"

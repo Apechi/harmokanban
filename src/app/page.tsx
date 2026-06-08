@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders } from "lucide-react";
-import { BoardState, TaskCard, BoardColumn } from "@/types";
-import { loadBoardState, saveBoardState } from "@/lib/db";
+import { BoardState, TaskCard, BoardColumn, Project } from "@/types";
+import { loadBoardState, saveBoardState, loadProjectsList, saveProjectsList, DEFAULT_PROJECT_ID } from "@/lib/db";
 import Board from "@/components/Board";
 import CardModal from "@/components/CardModal";
 import CollaborateDrawer from "@/components/CollaborateDrawer";
@@ -11,6 +11,7 @@ import { useCollaboration } from "@/hooks/useCollaboration";
 import GanttTimeline from "@/components/GanttTimeline";
 import AutomationConsole from "@/components/AutomationConsole";
 import { runAutomations, DEFAULT_RULES, AutomationRule } from "@/lib/automations";
+import ProjectSidebar from "@/components/ProjectSidebar";
 
 // Default seed data if IndexedDB is empty
 const DEFAULT_STATE: BoardState = {
@@ -94,6 +95,10 @@ const DEFAULT_STATE: BoardState = {
 };
 
 export default function Home() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string>(DEFAULT_PROJECT_ID);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   const [boardState, setBoardState] = useState<BoardState | null>(null);
   const [activeCard, setActiveCard] = useState<TaskCard | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,23 +122,166 @@ export default function Home() {
     broadcastBoardState,
   } = useCollaboration(boardState, setBoardState);
 
-  // Load state on mount
+  // Initialize projects and active board state
   useEffect(() => {
-    async function initBoard() {
-      const saved = await loadBoardState();
-      if (saved) {
-        if (saved.columns && saved.columnOrder && saved.cards) {
-          setBoardState(saved);
-        } else {
-          setBoardState(DEFAULT_STATE);
-        }
+    async function initProjectsAndBoard() {
+      // 1. Load projects list
+      let loadedProjects = await loadProjectsList();
+      const defaultProj: Project = {
+        id: DEFAULT_PROJECT_ID,
+        name: "Main Operations",
+        roomId: null,
+        isOnline: false,
+        archived: false,
+        createdAt: Date.now(),
+      };
+
+      if (!loadedProjects || loadedProjects.length === 0) {
+        loadedProjects = [defaultProj];
+        await saveProjectsList(loadedProjects);
+      }
+      setProjects(loadedProjects);
+
+      // Determine active project
+      const activeProj = loadedProjects.find((p) => !p.archived) || defaultProj;
+      setActiveProjectId(activeProj.id);
+
+      // 2. Load board state for active project
+      const savedBoard = await loadBoardState(activeProj.id);
+      if (savedBoard && savedBoard.columns && savedBoard.columnOrder && savedBoard.cards) {
+        setBoardState(savedBoard);
       } else {
         setBoardState(DEFAULT_STATE);
-        await saveBoardState(DEFAULT_STATE);
+        await saveBoardState(DEFAULT_STATE, activeProj.id);
       }
     }
-    initBoard();
+    initProjectsAndBoard();
   }, []);
+
+  // Sync collaboration connection state back to the projects list
+  useEffect(() => {
+    if (projects.length === 0) return;
+    const updated = projects.map((p) => {
+      if (p.id === activeProjectId) {
+        return {
+          ...p,
+          roomId: roomId,
+          isOnline: isConnected,
+        };
+      }
+      return p;
+    });
+    // Only update if changed
+    if (JSON.stringify(updated) !== JSON.stringify(projects)) {
+      setProjects(updated);
+      saveProjectsList(updated);
+    }
+  }, [roomId, isConnected, activeProjectId, projects]);
+
+  // Handle switching projects
+  const handleSelectProject = async (id: string) => {
+    if (id === activeProjectId) return;
+
+    // Disconnect old room connection first
+    disconnectFromRoom();
+
+    setActiveProjectId(id);
+
+    const savedBoard = await loadBoardState(id);
+    let currentBoard = savedBoard;
+
+    if (!savedBoard || !savedBoard.columns || !savedBoard.columnOrder || !savedBoard.cards) {
+      // Create clean board state for new project
+      const cleanState: BoardState = {
+        columns: {
+          "col-todo": { id: "col-todo", title: "TODO", cardIds: [] },
+          "col-progress": { id: "col-progress", title: "IN PROGRESS", cardIds: [] },
+          "col-review": { id: "col-review", title: "REVIEW", cardIds: [] },
+          "col-done": { id: "col-done", title: "DONE", cardIds: [] },
+        },
+        columnOrder: ["col-todo", "col-progress", "col-review", "col-done"],
+        cards: {},
+      };
+      currentBoard = cleanState;
+      setBoardState(cleanState);
+      await saveBoardState(cleanState, id);
+    } else {
+      setBoardState(savedBoard);
+    }
+
+    // Connect to room if the project is configured with a room
+    const targetProject = projects.find((p) => p.id === id);
+    if (targetProject && targetProject.roomId && currentBoard) {
+      connectToRoom(targetProject.roomId, currentBoard);
+    }
+  };
+
+  // Create project
+  const handleCreateProject = async (name: string) => {
+    const newId = crypto.randomUUID();
+    const newProj: Project = {
+      id: newId,
+      name,
+      roomId: null,
+      isOnline: false,
+      archived: false,
+      createdAt: Date.now(),
+    };
+
+    const updatedProjects = [...projects, newProj];
+    setProjects(updatedProjects);
+    await saveProjectsList(updatedProjects);
+
+    // Seed empty board state
+    const cleanState: BoardState = {
+      columns: {
+        "col-todo": { id: "col-todo", title: "TODO", cardIds: [] },
+        "col-progress": { id: "col-progress", title: "IN PROGRESS", cardIds: [] },
+        "col-review": { id: "col-review", title: "REVIEW", cardIds: [] },
+        "col-done": { id: "col-done", title: "DONE", cardIds: [] },
+      },
+      columnOrder: ["col-todo", "col-progress", "col-review", "col-done"],
+      cards: {},
+    };
+
+    setBoardState(cleanState);
+    await saveBoardState(cleanState, newId);
+    setActiveProjectId(newId);
+  };
+
+  // Rename project
+  const handleRenameProject = async (id: string, newName: string) => {
+    const updated = projects.map((p) => (p.id === id ? { ...p, name: newName } : p));
+    setProjects(updated);
+    await saveProjectsList(updated);
+  };
+
+  // Archive/delete project
+  const handleDeleteProject = async (id: string) => {
+    const updated = projects.map((p) => (p.id === id ? { ...p, archived: true } : p));
+    
+    const remaining = updated.filter((p) => !p.archived);
+    if (remaining.length === 0) {
+      // If no projects remain, automatically create a new default project
+      const defaultProj: Project = {
+        id: DEFAULT_PROJECT_ID,
+        name: "Main Operations",
+        roomId: null,
+        isOnline: false,
+        archived: false,
+        createdAt: Date.now(),
+      };
+      updated.push(defaultProj);
+      remaining.push(defaultProj);
+    }
+
+    setProjects(updated);
+    await saveProjectsList(updated);
+
+    if (activeProjectId === id) {
+      handleSelectProject(remaining[0].id);
+    }
+  };
 
   // Load automation rules on mount
   useEffect(() => {
@@ -199,7 +347,7 @@ export default function Home() {
 
     setBoardState(finalState);
     setIsSaving(true);
-    await saveBoardState(finalState);
+    await saveBoardState(finalState, activeProjectId);
     broadcastBoardState(finalState, origin);
     setIsSaving(false);
   };
@@ -463,28 +611,42 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Kanban Workspace Container */}
-      <main className="flex-1 bg-brand-bg relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,85,247,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,85,247,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+      {/* Sidebar + Main Workspace layout container */}
+      <div className="flex flex-1 overflow-hidden">
+        <ProjectSidebar
+          projects={projects}
+          activeProjectId={activeProjectId}
+          onSelectProject={handleSelectProject}
+          onCreateProject={handleCreateProject}
+          onRenameProject={handleRenameProject}
+          onDeleteProject={handleDeleteProject}
+          isOpen={isSidebarOpen}
+          onToggleOpen={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
 
-        {viewMode === "kanban" ? (
-          <Board
-            state={boardState}
-            onStateChange={updateBoardState}
-            onEditCard={handleEditCard}
-            onAddCard={handleAddCard}
-            onUpdateColumnTitle={handleUpdateColumnTitle}
-            onDeleteColumn={handleDeleteColumn}
-            activeCardViewers={activeCardViewers}
-          />
-        ) : (
-          <GanttTimeline
-            state={boardState}
-            onStateChange={updateBoardState}
-            onEditCard={handleEditCard}
-          />
-        )}
-      </main>
+        {/* Main Kanban Workspace Container */}
+        <main className="flex-1 bg-brand-bg relative overflow-hidden flex flex-col">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,85,247,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,85,247,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+
+          {viewMode === "kanban" ? (
+            <Board
+              state={boardState}
+              onStateChange={updateBoardState}
+              onEditCard={handleEditCard}
+              onAddCard={handleAddCard}
+              onUpdateColumnTitle={handleUpdateColumnTitle}
+              onDeleteColumn={handleDeleteColumn}
+              activeCardViewers={activeCardViewers}
+            />
+          ) : (
+            <GanttTimeline
+              state={boardState}
+              onStateChange={updateBoardState}
+              onEditCard={handleEditCard}
+            />
+          )}
+        </main>
+      </div>
 
       {/* Card Details Modal Drawer */}
       <CardModal

@@ -152,7 +152,7 @@ export function useCollaboration(
         const syncedState = syncYjsToBoardState(yRootMap);
         if (syncedState) {
           setLocalState(syncedState);
-          await saveBoardState(syncedState);
+          await saveBoardState(syncedState, cleanRoomCode);
         }
       }
     });
@@ -166,7 +166,7 @@ export function useCollaboration(
       const updatedState = syncYjsToBoardState(yRootMap);
       if (updatedState) {
         setLocalState(updatedState);
-        saveBoardState(updatedState);
+        saveBoardState(updatedState, cleanRoomCode);
       }
       isSyncingFromYjsRef.current = false;
     });

@@ -4,6 +4,21 @@ import { Draggable } from "@hello-pangea/dnd";
 import { TaskCard } from "@/types";
 import { Calendar, CheckSquare } from "lucide-react";
 
+export function formatTacticalDateTime(dateTimeStr: string | null): string {
+  if (!dateTimeStr) return "";
+  if (dateTimeStr.includes("T")) {
+    const [datePart, timePart] = dateTimeStr.split("T");
+    const [year, month, day] = datePart.split("-");
+    const [hour, minute] = timePart.split(":");
+    return `${month}/${day} ${hour}:${minute}`;
+  }
+  const parts = dateTimeStr.split("-");
+  if (parts.length === 3) {
+    return `${parts[1]}/${parts[2]}`;
+  }
+  return dateTimeStr;
+}
+
 interface CardProps {
   card: TaskCard;
   index: number;
@@ -120,7 +135,7 @@ export default function Card({ card, index, onClick, viewers = [] }: CardProps) 
                 <span className="flex items-center gap-0.5 text-brand-accent/70">
                   <Calendar size={11} />
                   <span>
-                    {card.dueDate.split("-").slice(1).join("/")}
+                    {formatTacticalDateTime(card.dueDate)}
                   </span>
                 </span>
               )}

@@ -4,6 +4,21 @@ import React, { useState, useEffect, useRef } from "react";
 import { BoardState, TaskCard } from "@/types";
 import { Calendar, Layers, Sliders, ChevronRight, Play, X, User } from "lucide-react";
 
+export function formatTacticalDateTime(dateTimeStr: string | null): string {
+  if (!dateTimeStr) return "";
+  if (dateTimeStr.includes("T")) {
+    const [datePart, timePart] = dateTimeStr.split("T");
+    const [year, month, day] = datePart.split("-");
+    const [hour, minute] = timePart.split(":");
+    return `${month}/${day} ${hour}:${minute}`;
+  }
+  const parts = dateTimeStr.split("-");
+  if (parts.length === 3) {
+    return `${parts[1]}/${parts[2]}`;
+  }
+  return dateTimeStr;
+}
+
 interface GanttTimelineProps {
   state: BoardState;
   onStateChange: (newState: BoardState) => void;
@@ -26,7 +41,7 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
   // local temporary dates for rendering during drag (to avoid broadcasting jitter)
   const [dragCardState, setDragCardState] = useState<{ id: string; start: string | null; due: string | null } | null>(null);
 
-  // Timeline Range: We default to a 4-month range around current date
+  // Timeline Range: We default to starting 2 weeks ago and extending to the end of the current year
   const [startDateRange, setStartDateRange] = useState<Date>(() => {
     const d = new Date();
     d.setDate(d.getDate() - 14); // start 2 weeks ago
@@ -35,8 +50,8 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
   
   const [endDateRange, setEndDateRange] = useState<Date>(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 90); // show 90 days forward
-    return d;
+    // Extend to December 31st of the current year
+    return new Date(d.getFullYear(), 11, 31);
   });
 
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -116,9 +131,17 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
     return new Date(startMs + percentage * (endMs - startMs));
   };
 
-  // Format Date to YYYY-MM-DD
-  const formatDateString = (date: Date): string => {
-    return date.toISOString().split("T")[0];
+  // Format Date to YYYY-MM-DD, preserving original time component if present
+  const formatDateString = (date: Date, originalStr?: string | null): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const datePart = `${year}-${month}-${day}`;
+    if (originalStr && originalStr.includes("T")) {
+      const timePart = originalStr.split("T")[1];
+      return `${datePart}T${timePart}`;
+    }
+    return datePart;
   };
 
   // Handle Drag / Resize Mouse Events
@@ -169,8 +192,8 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
 
       setDragCardState({
         id: draggingCardId,
-        start: formatDateString(newStart),
-        due: formatDateString(newDue),
+        start: formatDateString(newStart, cardOriginalStart),
+        due: formatDateString(newDue, cardOriginalDue),
       });
     };
 
@@ -402,6 +425,7 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
                         width: width,
                         position: "absolute",
                       }}
+                      title={`MISSION: ${card.title}\nSTART: ${formatTacticalDateTime(activeStart) || "NOT SET"}\nDUE: ${formatTacticalDateTime(activeDue) || "NOT SET"}`}
                       className={`h-9 bg-brand-card/90 border rounded-xs flex items-center justify-between px-3 text-xs font-bold text-slate-200 transition-shadow ${
                         isDraggingThis
                           ? "border-brand-accent shadow-md shadow-brand-accent/30 cursor-grabbing"
@@ -430,6 +454,9 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
                               {card.storyPoints}
                             </span>
                           )}
+                          <span className="text-[9px] text-slate-400 font-mono hidden md:inline mr-1">
+                            {formatTacticalDateTime(activeStart)} - {formatTacticalDateTime(activeDue)}
+                          </span>
                           <span className={`w-1.5 h-1.5 rounded-full ${
                             card.priority === "HIGH" ? "bg-brand-destructive" : card.priority === "MEDIUM" ? "bg-amber-500" : "bg-emerald-500"
                           }`} />
