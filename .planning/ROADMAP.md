@@ -7,7 +7,7 @@ KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user valu
 ## Milestones
 
 - ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-06-08)
-- 🚧 **v2.0 Advanced Collaboration & Multi-Project Support** - Phases 4-5 (in progress)
+- ✅ **v2.0 Advanced Collaboration & Multi-Project Support** - Phases 4-5 (shipped 2026-06-09)
 
 ## Phases
 
@@ -67,7 +67,8 @@ Plans:
 
 </details>
 
-### 🚧 v2.0 Advanced Collaboration & Multi-Project Support (In Progress)
+<details>
+<summary>✅ v2.0 Advanced Collaboration & Multi-Project Support (Shipped 2026-06-09)</summary>
 
 **Milestone Goal:** Enhance the collaborative capability and structure of KanbanHarmo with multi-project support, role-based controls, and rich real-time visual collaboration cues.
 
@@ -97,7 +98,9 @@ Plans:
   2. Multi-presence indicators (avatars/badges) are rendered on card elements when multiple users have a card details modal open.
   3. User can choose a role (Viewer or Editor) when connecting to a room, and Viewer users are restricted from adding, deleting, dragging, or updating tasks.
 
-**Plans:** 0/0 plans complete
+- [x] 05-01: Implement real-time cursor tracking, multi-presence indicators, and owner-controlled client role assignment.
+
+</details>
 
 ---
 
@@ -112,4 +115,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. P2P Sync & Real-Time Collaboration | v1.0 | 2/2 | Complete | 2026-06-08 |
 | 3. Gantt Timeline & Automation Builder | v1.0 | 2/2 | Complete | 2026-06-08 |
 | 4. Multi-Project & Time Management | v2.0 | 1/1 | Complete | 2026-06-08 |
-| 5. Collaborative Presence & Role Controls | v2.0 | 0/0 | Complete    | 2026-06-08 |
+| 5. Collaborative Presence & Role Controls | v2.0 | 1/1 | Complete | 2026-06-09 |
