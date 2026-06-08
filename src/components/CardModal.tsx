@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TaskCard, Priority, SubTask } from "@/types";
-import { X, Calendar, Plus, Trash2, CheckSquare, Tag, AlignLeft, Hash } from "lucide-react";
+import { X, Calendar, Plus, Trash2, CheckSquare, Tag, AlignLeft, Hash, User } from "lucide-react";
 
 interface CardModalProps {
   card: TaskCard | null;
@@ -11,6 +11,8 @@ interface CardModalProps {
   onClose: () => void;
   onSave: (updatedCard: TaskCard) => void;
   onDelete: (cardId: string, columnId: string) => void;
+  localRole?: "editor" | "viewer";
+  viewers?: string[];
 }
 
 export default function CardModal({
@@ -19,6 +21,8 @@ export default function CardModal({
   onClose,
   onSave,
   onDelete,
+  localRole = "editor",
+  viewers = [],
 }: CardModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -55,6 +59,11 @@ export default function CardModal({
   if (!card) return null;
 
   const handleSaveAndClose = () => {
+    if (localRole === "viewer") {
+      onClose();
+      return;
+    }
+
     // Parse tags input
     const parsedTags = tagsInput
       .split(",")
@@ -79,6 +88,7 @@ export default function CardModal({
 
   const handleAddSubTask = (e: React.FormEvent) => {
     e.preventDefault();
+    if (localRole === "viewer") return;
     if (!newSubTaskTitle.trim()) return;
 
     const newSub: SubTask = {
@@ -92,6 +102,7 @@ export default function CardModal({
   };
 
   const toggleSubTask = (subId: string) => {
+    if (localRole === "viewer") return;
     const updated = subTasks.map((st) =>
       st.id === subId ? { ...st, completed: !st.completed } : st
     );
@@ -99,6 +110,7 @@ export default function CardModal({
   };
 
   const deleteSubTask = (subId: string) => {
+    if (localRole === "viewer") return;
     const updated = subTasks.filter((st) => st.id !== subId);
     setSubTasks(updated);
   };
@@ -129,9 +141,17 @@ export default function CardModal({
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-brand-accent/20">
-              <span className="tactical-label text-[11px] text-brand-accent font-bold tracking-widest">
-                CARD FILES // {card.code}
-              </span>
+              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                <span className="tactical-label text-[11px] text-brand-accent font-bold tracking-widest">
+                  CARD FILES // {card.code}
+                </span>
+                {viewers.length > 0 && (
+                  <div className="flex gap-1.5 items-center bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-xs text-[9px] text-cyan-400 font-mono uppercase tracking-wider animate-pulse">
+                    <User size={10} />
+                    <span>VIEWING: {viewers.join(", ")}</span>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleSaveAndClose}
                 className="p-1 hover:text-brand-accent text-slate-400 transition-colors cursor-pointer"
@@ -151,7 +171,8 @@ export default function CardModal({
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-brand-bg/60 text-slate-100 text-lg font-bold px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all"
+                  disabled={localRole === "viewer"}
+                  className="w-full bg-brand-bg/60 text-slate-100 text-lg font-bold px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
                   placeholder="Mission title..."
                 />
               </div>
@@ -168,8 +189,13 @@ export default function CardModal({
                       <button
                         key={level}
                         type="button"
-                        onClick={() => setPriority(level)}
-                        className={`py-1.5 text-xs font-bold rounded-xs border transition-all cursor-pointer ${
+                        onClick={() => {
+                          if (localRole !== "viewer") setPriority(level);
+                        }}
+                        disabled={localRole === "viewer"}
+                        className={`py-1.5 text-xs font-bold rounded-xs border transition-all ${
+                          localRole === "viewer" ? "cursor-not-allowed" : "cursor-pointer"
+                        } ${
                           priority === level
                             ? level === "HIGH"
                               ? "bg-brand-destructive border-brand-destructive text-white shadow-xs shadow-brand-destructive/20"
@@ -196,7 +222,8 @@ export default function CardModal({
                     onChange={(e) =>
                       setStoryPoints(e.target.value === "" ? null : Number(e.target.value))
                     }
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono"
+                    disabled={localRole === "viewer"}
+                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
                     placeholder="e.g. 5"
                     min="0"
                   />
@@ -211,7 +238,8 @@ export default function CardModal({
                     type="datetime-local"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono"
+                    disabled={localRole === "viewer"}
+                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -224,7 +252,8 @@ export default function CardModal({
                     type="datetime-local"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono"
+                    disabled={localRole === "viewer"}
+                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -237,7 +266,8 @@ export default function CardModal({
                     type="text"
                     value={tagsInput}
                     onChange={(e) => setTagsInput(e.target.value)}
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all"
+                    disabled={localRole === "viewer"}
+                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
                     placeholder="e.g. feature, backend, ui"
                   />
                 </div>
@@ -251,8 +281,9 @@ export default function CardModal({
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  disabled={localRole === "viewer"}
                   rows={4}
-                  className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all resize-y"
+                  className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all resize-y disabled:opacity-75 disabled:cursor-not-allowed"
                   placeholder="Detail the operational details..."
                 />
               </div>
@@ -270,12 +301,15 @@ export default function CardModal({
                       key={sub.id}
                       className="flex items-center justify-between p-2.5 bg-brand-bg/40 border border-brand-accent/10 rounded-xs hover:border-brand-accent/20 transition-all"
                     >
-                      <label className="flex items-center gap-3 cursor-pointer flex-1 mr-4">
+                      <label className={`flex items-center gap-3 flex-1 mr-4 ${localRole === "viewer" ? "cursor-default" : "cursor-pointer"}`}>
                         <input
                           type="checkbox"
                           checked={sub.completed}
-                          onChange={() => toggleSubTask(sub.id)}
-                          className="w-4 h-4 accent-brand-accent cursor-pointer rounded-xs"
+                          onChange={() => {
+                            if (localRole !== "viewer") toggleSubTask(sub.id);
+                          }}
+                          disabled={localRole === "viewer"}
+                          className="w-4 h-4 accent-brand-accent cursor-pointer rounded-xs disabled:cursor-not-allowed"
                         />
                         <span
                           className={`text-sm ${
@@ -285,61 +319,79 @@ export default function CardModal({
                           {sub.title}
                         </span>
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => deleteSubTask(sub.id)}
-                        className="text-slate-500 hover:text-brand-destructive transition-colors cursor-pointer"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {localRole !== "viewer" && (
+                        <button
+                          type="button"
+                          onClick={() => deleteSubTask(sub.id)}
+                          className="text-slate-500 hover:text-brand-destructive transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
 
                 {/* Add Checklist Item Form */}
-                <form onSubmit={handleAddSubTask} className="flex gap-2 mt-2">
-                  <input
-                    type="text"
-                    value={newSubTaskTitle}
-                    onChange={(e) => setNewSubTaskTitle(e.target.value)}
-                    placeholder="Add subtask deployment..."
-                    className="flex-1 bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3 bg-brand-accent/20 hover:bg-brand-accent text-brand-accent hover:text-slate-100 border border-brand-accent/40 rounded-xs transition-all flex items-center justify-center cursor-pointer"
-                  >
-                    <Plus size={16} />
-                  </button>
-                </form>
+                {localRole !== "viewer" && (
+                  <form onSubmit={handleAddSubTask} className="flex gap-2 mt-2">
+                    <input
+                      type="text"
+                      value={newSubTaskTitle}
+                      onChange={(e) => setNewSubTaskTitle(e.target.value)}
+                      placeholder="Add subtask deployment..."
+                      className="flex-1 bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 bg-brand-accent/20 hover:bg-brand-accent text-brand-accent hover:text-slate-100 border border-brand-accent/40 rounded-xs transition-all flex items-center justify-center cursor-pointer"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
 
             {/* Footer Actions */}
             <div className="px-6 py-4 border-t border-brand-accent/20 bg-brand-bg/40 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm("Delete Card: Are you sure you want to terminate this card deployment?")) {
-                    onDelete(card.id, card.columnId);
-                    onClose();
-                  }
-                }}
-                className="px-3 py-1.5 border border-brand-destructive/30 hover:border-brand-destructive text-brand-destructive/80 hover:text-brand-destructive bg-brand-destructive/5 hover:bg-brand-destructive/10 rounded-xs text-xs font-bold transition-all uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-              >
-                <Trash2 size={13} />
-                TERMINATE
-              </button>
+              {localRole !== "viewer" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("Delete Card: Are you sure you want to terminate this card deployment?")) {
+                        onDelete(card.id, card.columnId);
+                        onClose();
+                      }
+                    }}
+                    className="px-3 py-1.5 border border-brand-destructive/30 hover:border-brand-destructive text-brand-destructive/80 hover:text-brand-destructive bg-brand-destructive/5 hover:bg-brand-destructive/10 rounded-xs text-xs font-bold transition-all uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                    TERMINATE
+                  </button>
 
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleSaveAndClose}
-                  className="px-4 py-2 bg-brand-accent hover:bg-purple-600 text-white rounded-xs text-xs font-bold uppercase tracking-wider transition-all shadow-xs hover:shadow-brand-accent/20 cursor-pointer"
-                >
-                  SAVE DEPLOYMENT
-                </button>
-              </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveAndClose}
+                      className="px-4 py-2 bg-brand-accent hover:bg-purple-600 text-white rounded-xs text-xs font-bold uppercase tracking-wider transition-all shadow-xs hover:shadow-brand-accent/20 cursor-pointer"
+                    >
+                      SAVE DEPLOYMENT
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-end w-full">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 bg-slate-750 hover:bg-slate-700 border border-slate-600 hover:border-slate-500 text-slate-200 rounded-xs text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    CLOSE
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

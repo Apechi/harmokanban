@@ -15,6 +15,7 @@ interface ColumnProps {
   onUpdateTitle: (columnId: string, newTitle: string) => void;
   onDelete: (columnId: string) => void;
   activeCardViewers?: { [cardId: string]: string[] };
+  localRole?: "editor" | "viewer";
 }
 
 export default function Column({
@@ -26,6 +27,7 @@ export default function Column({
   onUpdateTitle,
   onDelete,
   activeCardViewers = {},
+  localRole = "editor",
 }: ColumnProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(column.title);
@@ -56,7 +58,7 @@ export default function Column({
   };
 
   return (
-    <Draggable draggableId={column.id} index={index}>
+    <Draggable draggableId={column.id} index={index} isDragDisabled={localRole === "viewer"}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -70,7 +72,7 @@ export default function Column({
           {/* Column Header */}
           <div
             {...provided.dragHandleProps}
-            className="flex items-center justify-between pb-3 mb-3 border-b border-brand-accent/20 cursor-grab active:cursor-grabbing"
+            className={`flex items-center justify-between pb-3 mb-3 border-b border-brand-accent/20 ${localRole === "viewer" ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
           >
             {isEditing ? (
               <div className="flex items-center gap-1 w-full mr-2">
@@ -108,26 +110,28 @@ export default function Column({
                     {cards.length}
                   </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="p-1 hover:text-brand-accent text-slate-400 transition-colors cursor-pointer"
-                  >
-                    <Edit2 size={13} />
-                  </button>
-                  <button
-                    onClick={handleDeleteColumn}
-                    className="p-1 hover:text-brand-destructive text-slate-400 transition-colors cursor-pointer"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+                {localRole !== "viewer" && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="p-1 hover:text-brand-accent text-slate-400 transition-colors cursor-pointer"
+                    >
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      onClick={handleDeleteColumn}
+                      className="p-1 hover:text-brand-destructive text-slate-400 transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* Droppable Card List */}
-          <Droppable droppableId={column.id} type="CARD">
+          <Droppable droppableId={column.id} type="CARD" isDropDisabled={localRole === "viewer"}>
             {(provided, snapshot) => (
               <div
                 ref={provided.innerRef}
@@ -153,6 +157,7 @@ export default function Column({
                       index={cardIndex}
                       onClick={() => onEditCard(card)}
                       viewers={activeCardViewers[card.id] || []}
+                      localRole={localRole}
                     />
                   ))
                 )}
@@ -162,13 +167,15 @@ export default function Column({
           </Droppable>
 
           {/* Column Action Footer */}
-          <button
-            onClick={() => onAddCard(column.id)}
-            className="mt-3 w-full py-2 border border-dashed border-brand-accent/20 hover:border-brand-accent/60 bg-brand-bg/40 hover:bg-brand-accent/5 text-slate-300 hover:text-slate-100 rounded-xs flex items-center justify-center gap-1.5 transition-all text-xs font-semibold uppercase tracking-wider cursor-pointer"
-          >
-            <Plus size={14} />
-            CREATE CARD
-          </button>
+          {localRole !== "viewer" && (
+            <button
+              onClick={() => onAddCard(column.id)}
+              className="mt-3 w-full py-2 border border-dashed border-brand-accent/20 hover:border-brand-accent/60 bg-brand-bg/40 hover:bg-brand-accent/5 text-slate-300 hover:text-slate-100 rounded-xs flex items-center justify-center gap-1.5 transition-all text-xs font-semibold uppercase tracking-wider cursor-pointer"
+            >
+              <Plus size={14} />
+              CREATE CARD
+            </button>
+          )}
         </div>
       )}
     </Draggable>

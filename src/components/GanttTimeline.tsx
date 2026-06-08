@@ -23,11 +23,21 @@ interface GanttTimelineProps {
   state: BoardState;
   onStateChange: (newState: BoardState) => void;
   onEditCard: (card: TaskCard) => void;
+  localRole?: "editor" | "viewer";
+  peers?: any[];
+  onUpdateCursor?: (cursor: { x: number; y: number } | null) => void;
 }
 
 type ZoomMode = "DAYS" | "WEEKS" | "MONTHS";
 
-export default function GanttTimeline({ state, onStateChange, onEditCard }: GanttTimelineProps) {
+export default function GanttTimeline({
+  state,
+  onStateChange,
+  onEditCard,
+  localRole = "editor",
+  peers = [],
+  onUpdateCursor = () => {},
+}: GanttTimelineProps) {
   const [zoomMode, setZoomMode] = useState<ZoomMode>("WEEKS");
   const [isUnscheduledOpen, setIsUnscheduledOpen] = useState(true);
   
@@ -55,6 +65,7 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
   });
 
   const timelineRef = useRef<HTMLDivElement>(null);
+  const lastUpdateRef = useRef(0);
 
   // List of all scheduled cards (have at least start or due date, but for Gantt we need both or we fall back to auto-completing the other if one exists)
   const allCards = Object.values(state.cards);
@@ -152,6 +163,9 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
   ) => {
     e.stopPropagation();
     e.preventDefault();
+
+    if (localRole === "viewer") return;
+
     setDraggingCardId(card.id);
     setDragType(type);
     setDragStartX(e.clientX);
@@ -231,6 +245,8 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
 
   // Handle Drop of Unscheduled Card to Gantt Timeline
   const handleScheduleCard = (card: TaskCard, dropX: number) => {
+    if (localRole === "viewer") return;
+
     // Determine the start date based on the mouse drop X position
     const start = getDateFromX(dropX);
     const due = new Date(start);
@@ -251,6 +267,24 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
       ...state,
       cards: updatedCards,
     });
+  };
+
+  const handleTimelineMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const x = ((e.clientX - rect.left + container.scrollLeft) / container.scrollWidth) * 100;
+    const y = ((e.clientY - rect.top + container.scrollTop) / container.scrollHeight) * 100;
+
+    const now = Date.now();
+    if (now - lastUpdateRef.current > 80) {
+      onUpdateCursor({ x, y });
+      lastUpdateRef.current = now;
+    }
+  };
+
+  const handleTimelineMouseLeave = () => {
+    onUpdateCursor(null);
   };
 
   return (
@@ -296,12 +330,12 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
               unscheduledCards.map(card => (
                 <div
                   key={card.id}
-                  draggable
+                  draggable={localRole !== "viewer"}
                   onDragStart={(e) => {
                     e.dataTransfer.setData("text/plain", card.id);
                   }}
                   onClick={() => onEditCard(card)}
-                  className="p-3 bg-brand-bg/50 border border-brand-accent/10 hover:border-brand-accent/40 rounded-xs transition-all cursor-grab active:cursor-grabbing group relative overflow-hidden"
+                  className={`p-3 bg-brand-bg/50 border border-brand-accent/10 hover:border-brand-accent/40 rounded-xs transition-all group relative overflow-hidden ${localRole === "viewer" ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"}`}
                 >
                   {/* Priority Tag Accent */}
                   <div className={`absolute top-0 left-0 w-1 h-full ${
@@ -349,7 +383,7 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
           </div>
 
           <div className="text-[10px] text-slate-500 uppercase">
-            GANTT PLOTTER // DRAG BARS TO RESCHEDULE, RESIZE SIDES TO CHANGE DURATION
+            {localRole === "viewer" ? "GANTT PLOTTER // READ-ONLY MODE" : "GANTT PLOTTER // DRAG BARS TO RESCHEDULE, RESIZE SIDES TO CHANGE DURATION"}
           </div>
         </div>
 
@@ -357,9 +391,15 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
         <div 
           ref={timelineRef}
           className="flex-1 overflow-auto relative bg-[#040209]"
-          onDragOver={(e) => e.preventDefault()}
+          onMouseMove={handleTimelineMouseMove}
+          onMouseLeave={handleTimelineMouseLeave}
+          onDragOver={(e) => {
+            if (localRole !== "viewer") e.preventDefault();
+          }}
           onDrop={(e) => {
             e.preventDefault();
+            if (localRole === "viewer") return;
+
             const cardId = e.dataTransfer.getData("text/plain");
             console.log("GanttTimeline: onDrop triggered", { cardId });
             if (!cardId || !timelineRef.current) return;
@@ -433,16 +473,18 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
                       }`}
                     >
                       {/* Resize Start Handle */}
-                      <div
-                        onMouseDown={(e) => handleMouseDown(e, card, "resize-start")}
-                        className="absolute left-0 top-0 bottom-0 w-2 hover:bg-brand-accent bg-transparent cursor-ew-resize transition-all rounded-l-xs"
-                      />
+                      {localRole !== "viewer" && (
+                        <div
+                          onMouseDown={(e) => handleMouseDown(e, card, "resize-start")}
+                          className="absolute left-0 top-0 bottom-0 w-2 hover:bg-brand-accent bg-transparent cursor-ew-resize transition-all rounded-l-xs"
+                        />
+                      )}
 
                       {/* Content click trigger and drag zone */}
                       <div
                         onMouseDown={(e) => handleMouseDown(e, card, "move")}
                         onClick={() => onEditCard(card)}
-                        className="flex-1 h-full flex items-center justify-between select-none cursor-grab active:cursor-grabbing px-1 overflow-hidden"
+                        className={`flex-1 h-full flex items-center justify-between select-none px-1 overflow-hidden ${localRole === "viewer" ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"}`}
                       >
                         <div className="flex items-center gap-2 overflow-hidden mr-2">
                           <span className="text-[10px] text-brand-accent font-mono truncate">{card.code}</span>
@@ -464,10 +506,12 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
                       </div>
 
                       {/* Resize End Handle */}
-                      <div
-                        onMouseDown={(e) => handleMouseDown(e, card, "resize-end")}
-                        className="absolute right-0 top-0 bottom-0 w-2 hover:bg-brand-accent bg-transparent cursor-ew-resize transition-all rounded-r-xs"
-                      />
+                      {localRole !== "viewer" && (
+                        <div
+                          onMouseDown={(e) => handleMouseDown(e, card, "resize-end")}
+                          className="absolute right-0 top-0 bottom-0 w-2 hover:bg-brand-accent bg-transparent cursor-ew-resize transition-all rounded-r-xs"
+                        />
+                      )}
                     </div>
                   </div>
                 );
@@ -481,6 +525,54 @@ export default function GanttTimeline({ state, onStateChange, onEditCard }: Gant
                 </div>
               )}
             </div>
+
+            {/* Render remote cursors */}
+            {peers.map((peer) => {
+              if (!peer.cursor) return null;
+
+              const colors = [
+                "#06b6d4", "#a855f7", "#f97316", "#10b981", "#ec4899", 
+                "#3b82f6", "#eab308", "#ef4444", "#8b5cf6", "#14b8a6"
+              ];
+              const colorIdx = Math.abs(peer.id) % colors.length;
+              const color = colors[colorIdx];
+
+              return (
+                <div
+                  key={peer.id}
+                  className="absolute pointer-events-none z-50 transition-all duration-75 ease-out"
+                  style={{
+                    left: `${peer.cursor.x}%`,
+                    top: `${peer.cursor.y}%`,
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ transform: "rotate(-15deg)" }}
+                  >
+                    <path
+                      d="M1 1V11.5L4.5 8L8.5 15.5L11 14L7 6.5L12 6L1 1Z"
+                      fill={color}
+                      stroke="white"
+                      strokeWidth="1"
+                    />
+                  </svg>
+                  <div
+                    className="mt-1 ml-3 px-1.5 py-0.5 rounded-xs text-[8px] font-mono text-white font-semibold uppercase tracking-wider whitespace-nowrap shadow-md border"
+                    style={{
+                      backgroundColor: color,
+                      borderColor: "rgba(255, 255, 255, 0.2)"
+                    }}
+                  >
+                    {peer.name}
+                  </div>
+                </div>
+              );
+            })}
 
           </div>
         </div>

@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { BoardState, TaskCard, BoardColumn } from "@/types";
 import Column from "./Column";
@@ -13,6 +11,9 @@ interface BoardProps {
   onUpdateColumnTitle: (columnId: string, newTitle: string) => void;
   onDeleteColumn: (columnId: string) => void;
   activeCardViewers?: { [cardId: string]: string[] };
+  localRole?: "editor" | "viewer";
+  peers?: any[];
+  onUpdateCursor?: (cursor: { x: number; y: number } | null) => void;
 }
 
 export default function Board({
@@ -23,8 +24,12 @@ export default function Board({
   onUpdateColumnTitle,
   onDeleteColumn,
   activeCardViewers = {},
+  localRole = "editor",
+  peers = [],
+  onUpdateCursor = () => {},
 }: BoardProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const lastUpdateRef = useRef(0);
 
   // Avoid hydration mismatch with client-side drag-and-drop
   useEffect(() => {
@@ -54,6 +59,8 @@ export default function Board({
   }
 
   const handleDragEnd = (result: DropResult) => {
+    if (localRole === "viewer") return;
+
     const { destination, source, draggableId, type } = result;
 
     if (!destination) return;
@@ -139,14 +146,34 @@ export default function Board({
     }
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const x = ((e.clientX - rect.left + container.scrollLeft) / container.scrollWidth) * 100;
+    const y = ((e.clientY - rect.top + container.scrollTop) / container.scrollHeight) * 100;
+
+    const now = Date.now();
+    if (now - lastUpdateRef.current > 80) {
+      onUpdateCursor({ x, y });
+      lastUpdateRef.current = now;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    onUpdateCursor(null);
+  };
+
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId="all-columns" direction="horizontal" type="COLUMN">
+      <Droppable droppableId="all-columns" direction="horizontal" type="COLUMN" isDropDisabled={localRole === "viewer"}>
         {(provided) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className="flex gap-6 p-6 overflow-x-auto min-h-[calc(100vh-180px)] items-start select-none"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className="flex gap-6 p-6 overflow-x-auto min-h-[calc(100vh-180px)] items-start select-none relative"
           >
             {state.columnOrder.map((columnId, index) => {
               const column = state.columns[columnId];
@@ -166,10 +193,59 @@ export default function Board({
                   onUpdateTitle={onUpdateColumnTitle}
                   onDelete={onDeleteColumn}
                   activeCardViewers={activeCardViewers}
+                  localRole={localRole}
                 />
               );
             })}
             {provided.placeholder}
+
+            {/* Render remote cursors */}
+            {peers.map((peer) => {
+              if (!peer.cursor) return null;
+
+              const colors = [
+                "#06b6d4", "#a855f7", "#f97316", "#10b981", "#ec4899", 
+                "#3b82f6", "#eab308", "#ef4444", "#8b5cf6", "#14b8a6"
+              ];
+              const colorIdx = Math.abs(peer.id) % colors.length;
+              const color = colors[colorIdx];
+
+              return (
+                <div
+                  key={peer.id}
+                  className="absolute pointer-events-none z-50 transition-all duration-75 ease-out"
+                  style={{
+                    left: `${peer.cursor.x}%`,
+                    top: `${peer.cursor.y}%`,
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ transform: "rotate(-15deg)" }}
+                  >
+                    <path
+                      d="M1 1V11.5L4.5 8L8.5 15.5L11 14L7 6.5L12 6L1 1Z"
+                      fill={color}
+                      stroke="white"
+                      strokeWidth="1"
+                    />
+                  </svg>
+                  <div
+                    className="mt-1 ml-3 px-1.5 py-0.5 rounded-xs text-[8px] font-mono text-white font-semibold uppercase tracking-wider whitespace-nowrap shadow-md border"
+                    style={{
+                      backgroundColor: color,
+                      borderColor: "rgba(255, 255, 255, 0.2)"
+                    }}
+                  >
+                    {peer.name}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </Droppable>

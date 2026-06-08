@@ -11,12 +11,18 @@ import {
   getRandomOperatorCallsign,
   saveBackupBoardState,
 } from "@/lib/collaboration";
-import { saveBoardState, loadBoardState } from "@/lib/db";
+import { saveBoardState } from "@/lib/db";
 
 interface PeerInfo {
   id: number;
   name: string;
   activeCardId: string | null;
+  role: "editor" | "viewer";
+  cursor: { x: number; y: number } | null;
+}
+
+function getRandomMaxConns() {
+  return 20 + Math.floor(Math.random() * 15);
 }
 
 export function useCollaboration(
@@ -27,24 +33,28 @@ export function useCollaboration(
   const [isConnected, setIsConnected] = useState(false);
   const [peerCount, setPeerCount] = useState(0);
   const [peers, setPeers] = useState<PeerInfo[]>([]);
-  const [localCallsign, setLocalCallsign] = useState<string>("");
+  const [localCallsign, setLocalCallsign] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("squad-operator-callsign") || getRandomOperatorCallsign();
+    }
+    return "";
+  });
+  const [localRole, setLocalRole] = useState<"editor" | "viewer">("editor");
 
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebrtcProvider | null>(null);
   const persistenceRef = useRef<IndexeddbPersistence | null>(null);
   const isSyncingFromYjsRef = useRef(false);
 
-  // Initialize callsign on client mount
+  // Sync callsign to localStorage if generated
   useEffect(() => {
-    const savedCallsign = localStorage.getItem("squad-operator-callsign");
-    if (savedCallsign) {
-      setLocalCallsign(savedCallsign);
-    } else {
-      const newCallsign = getRandomOperatorCallsign();
-      setLocalCallsign(newCallsign);
-      localStorage.setItem("squad-operator-callsign", newCallsign);
+    if (localCallsign) {
+      const saved = localStorage.getItem("squad-operator-callsign");
+      if (!saved) {
+        localStorage.setItem("squad-operator-callsign", localCallsign);
+      }
     }
-  }, []);
+  }, [localCallsign]);
 
   // Update callsign function
   const updateCallsign = (newCallsign: string) => {
@@ -58,6 +68,29 @@ export function useCollaboration(
       providerRef.current.awareness.setLocalStateField("user", {
         ...currentPresence,
         name: trimmed,
+      });
+    }
+  };
+
+  // Update local role function
+  const updateLocalRole = (role: "editor" | "viewer") => {
+    setLocalRole(role);
+    if (providerRef.current) {
+      const currentPresence = providerRef.current.awareness.getLocalState()?.user || {};
+      providerRef.current.awareness.setLocalStateField("user", {
+        ...currentPresence,
+        role,
+      });
+    }
+  };
+
+  // Update cursor position function
+  const updateCursor = (cursor: { x: number; y: number } | null) => {
+    if (providerRef.current) {
+      const currentPresence = providerRef.current.awareness.getLocalState()?.user || {};
+      providerRef.current.awareness.setLocalStateField("user", {
+        ...currentPresence,
+        cursor,
       });
     }
   };
@@ -96,7 +129,7 @@ export function useCollaboration(
       provider = new WebrtcProvider(cleanRoomCode, doc, {
         signaling: signalingServers,
         filterBcConns: true,
-        maxConns: 20 + Math.floor(Math.random() * 15),
+        maxConns: getRandomMaxConns(),
       });
     } catch (err) {
       console.warn("[Collab] WebRTC provider init failed, local-only mode:", err);
@@ -115,18 +148,23 @@ export function useCollaboration(
     provider.awareness.setLocalStateField("user", {
       name: localCallsign || "Operator",
       activeCardId: null,
+      role: localRole,
+      cursor: null,
     });
 
     // 3. Handle awareness / presence updates
     const handleAwarenessChange = () => {
       const states = provider.awareness.getStates();
       const newPeers: PeerInfo[] = [];
-      states.forEach((state: any, clientID) => {
-        if (clientID !== doc.clientID && state.user) {
+      states.forEach((state: unknown, clientID) => {
+        const presence = state as { user?: { name: string; activeCardId?: string | null; role?: "editor" | "viewer"; cursor?: { x: number; y: number } | null } };
+        if (clientID !== doc.clientID && presence.user) {
           newPeers.push({
             id: clientID,
-            name: state.user.name,
-            activeCardId: state.user.activeCardId || null,
+            name: presence.user.name,
+            activeCardId: presence.user.activeCardId || null,
+            role: presence.user.role || "editor",
+            cursor: presence.user.cursor || null,
           });
         }
       });
@@ -205,7 +243,7 @@ export function useCollaboration(
   };
 
   // Sync React board changes back to Yjs shared Map
-  const broadcastBoardState = (newState: BoardState, origin?: any) => {
+  const broadcastBoardState = (newState: BoardState, origin?: string) => {
     if (!ydocRef.current || isSyncingFromYjsRef.current) return;
 
     const yRootMap = ydocRef.current.getMap("board-root");
@@ -225,10 +263,13 @@ export function useCollaboration(
     peerCount,
     peers,
     localCallsign,
+    localRole,
+    updateLocalRole,
     updateCallsign,
     connectToRoom,
     disconnectFromRoom,
     setEditingCard,
+    updateCursor,
     broadcastBoardState,
   };
 }

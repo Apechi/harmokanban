@@ -115,10 +115,13 @@ export default function Home() {
     peerCount,
     peers,
     localCallsign,
+    localRole,
+    updateLocalRole,
     updateCallsign,
     connectToRoom,
     disconnectFromRoom,
     setEditingCard,
+    updateCursor,
     broadcastBoardState,
   } = useCollaboration(boardState, setBoardState);
 
@@ -300,7 +303,7 @@ export default function Home() {
 
   // Periodically execute automations (e.g. for time-based triggers like due dates)
   useEffect(() => {
-    if (!boardState || automationRules.length === 0) return;
+    if (!boardState || automationRules.length === 0 || localRole === "viewer") return;
 
     // Check once when board state is loaded
     runAutomations(boardState, automationRules, (updatedState) => {
@@ -314,7 +317,7 @@ export default function Home() {
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [boardState, automationRules]);
+  }, [boardState, automationRules, localRole]);
 
   const handleRulesChange = (newRules: AutomationRule[]) => {
     setAutomationRules(newRules);
@@ -336,6 +339,8 @@ export default function Home() {
 
   // Save board state helper with local state updates
   const updateBoardState = async (newState: BoardState, origin?: string) => {
+    if (localRole === "viewer") return;
+
     let finalState = newState;
 
     if (origin !== "automation") {
@@ -637,12 +642,18 @@ export default function Home() {
               onUpdateColumnTitle={handleUpdateColumnTitle}
               onDeleteColumn={handleDeleteColumn}
               activeCardViewers={activeCardViewers}
+              localRole={localRole}
+              peers={peers}
+              onUpdateCursor={updateCursor}
             />
           ) : (
             <GanttTimeline
               state={boardState}
               onStateChange={updateBoardState}
               onEditCard={handleEditCard}
+              localRole={localRole}
+              peers={peers}
+              onUpdateCursor={updateCursor}
             />
           )}
         </main>
@@ -659,6 +670,8 @@ export default function Home() {
         }}
         onSave={handleSaveCard}
         onDelete={handleDeleteCard}
+        localRole={localRole}
+        viewers={activeCard ? (activeCardViewers[activeCard.id] || []) : []}
       />
 
       {/* Collaborate side drawer overlay */}
@@ -670,7 +683,9 @@ export default function Home() {
         peerCount={peerCount}
         peers={peers}
         localCallsign={localCallsign}
+        localRole={localRole}
         onUpdateCallsign={updateCallsign}
+        onUpdateRole={updateLocalRole}
         onConnect={(code) => {
           if (boardState) connectToRoom(code, boardState);
         }}

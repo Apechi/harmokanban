@@ -11,6 +11,7 @@ interface PeerInfo {
   id: number;
   name: string;
   activeCardId: string | null;
+  role: "editor" | "viewer";
 }
 
 interface CollaborateDrawerProps {
@@ -21,7 +22,9 @@ interface CollaborateDrawerProps {
   peerCount: number;
   peers: PeerInfo[];
   localCallsign: string;
+  localRole: "editor" | "viewer";
   onUpdateCallsign: (newCallsign: string) => void;
+  onUpdateRole: (role: "editor" | "viewer") => void;
   onConnect: (roomId: string) => void;
   onDisconnect: () => void;
 }
@@ -34,7 +37,9 @@ export default function CollaborateDrawer({
   peerCount,
   peers,
   localCallsign,
+  localRole,
   onUpdateCallsign,
+  onUpdateRole,
   onConnect,
   onDisconnect,
 }: CollaborateDrawerProps) {
@@ -174,7 +179,7 @@ export default function CollaborateDrawer({
               </div>
 
               {/* Operator Callsign Settings */}
-              <div className="border border-brand-accent/15 bg-brand-bg/30 p-4 rounded-xs mb-6">
+              <div className="border border-brand-accent/15 bg-brand-bg/30 p-4 rounded-xs mb-4">
                 <div className="text-[10px] text-slate-400 uppercase tracking-widest mb-2">
                   OPERATOR IDENTIFICATION
                 </div>
@@ -184,12 +189,13 @@ export default function CollaborateDrawer({
                       type="text"
                       value={callsignInput}
                       onChange={(e) => setCallsignInput(e.target.value)}
-                      placeholder="Enter callsing..."
+                      placeholder="Enter callsign..."
                       className="flex-1 bg-brand-bg text-slate-200 text-xs px-2.5 py-1.5 border border-brand-accent/50 rounded-xs focus:outline-hidden focus:ring-1 focus:ring-brand-accent"
                       maxLength={18}
                       autoFocus
                     />
                     <button
+                      type="button"
                       onClick={saveCallsign}
                       className="px-3 py-1 bg-brand-accent/20 border border-brand-accent/40 text-slate-200 hover:bg-brand-accent/30 rounded-xs text-xs font-bold uppercase cursor-pointer"
                     >
@@ -204,6 +210,7 @@ export default function CollaborateDrawer({
                       </span>
                     </div>
                     <button
+                      type="button"
                       onClick={() => {
                         setCallsignInput(localCallsign);
                         setIsEditingCallsign(true);
@@ -214,6 +221,42 @@ export default function CollaborateDrawer({
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Operator Permissions / Role Selection */}
+              <div className="border border-brand-accent/15 bg-brand-bg/30 p-4 rounded-xs mb-6">
+                <div className="text-[10px] text-slate-400 uppercase tracking-widest mb-2">
+                  OPERATOR ROLE & PERMISSIONS
+                </div>
+                <div className="flex bg-brand-bg/60 p-0.5 border border-brand-accent/20 rounded-xs">
+                  <button
+                    type="button"
+                    onClick={() => onUpdateRole("editor")}
+                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer text-center ${
+                      localRole === "editor"
+                        ? "bg-brand-accent text-white"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    Editor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onUpdateRole("viewer")}
+                    className={`flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer text-center ${
+                      localRole === "viewer"
+                        ? "bg-slate-700 text-white"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    Viewer
+                  </button>
+                </div>
+                <div className="text-[9px] text-slate-500 mt-2">
+                  {localRole === "editor"
+                    ? "FULL ACCESS: Can create, update, delete, and reorder tasks."
+                    : "READ-ONLY: Restricted from editing columns, tasks, or moving items."}
+                </div>
               </div>
 
               {/* Join / Host Room Form */}
@@ -264,6 +307,9 @@ export default function CollaborateDrawer({
                       <div className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-ping" />
                         <span className="font-semibold text-slate-200">{localCallsign}</span>
+                        <span className={`text-[8px] border px-1 rounded-xs font-mono font-bold tracking-wider uppercase ${localRole === "viewer" ? "border-slate-500/30 text-slate-400 bg-slate-500/10" : "border-brand-accent/30 text-brand-accent bg-brand-accent/10"}`}>
+                          {localRole}
+                        </span>
                       </div>
                       <span className="text-[9px] bg-brand-accent/20 text-brand-accent px-1.5 py-0.5 rounded-xs tracking-wider uppercase">
                         YOU
@@ -279,6 +325,9 @@ export default function CollaborateDrawer({
                         <div className="flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                           <span className="font-semibold text-slate-300">{peer.name}</span>
+                          <span className={`text-[8px] border px-1 rounded-xs font-mono font-bold tracking-wider uppercase ${peer.role === "viewer" ? "border-slate-500/30 text-slate-400 bg-slate-500/10" : "border-brand-accent/30 text-brand-accent bg-brand-accent/10"}`}>
+                            {peer.role}
+                          </span>
                         </div>
                         {peer.activeCardId && (
                           <span className="text-[9px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-1.5 py-0.5 rounded-xs tracking-wider uppercase animate-pulse">

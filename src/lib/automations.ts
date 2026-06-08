@@ -1,4 +1,4 @@
-import { BoardState, TaskCard, Priority } from "@/types";
+import { BoardState, Priority } from "@/types";
 
 export interface AutomationRule {
   id: string;
@@ -47,7 +47,7 @@ export function runAutomations(
   for (const cardId of Object.keys(updatedCards)) {
     const card = updatedCards[cardId];
     let cardModified = false;
-    let newCard = { ...card };
+    const newCard = { ...card };
 
     for (const rule of activeRules) {
       // 1. Evaluate Trigger

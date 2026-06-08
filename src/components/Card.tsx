@@ -24,9 +24,10 @@ interface CardProps {
   index: number;
   onClick: () => void;
   viewers?: string[];
+  localRole?: "editor" | "viewer";
 }
 
-export default function Card({ card, index, onClick, viewers = [] }: CardProps) {
+export default function Card({ card, index, onClick, viewers = [], localRole = "editor" }: CardProps) {
   const completedSubTasks = card.subTasks.filter((t) => t.completed).length;
   const totalSubTasks = card.subTasks.length;
 
@@ -40,7 +41,7 @@ export default function Card({ card, index, onClick, viewers = [] }: CardProps) 
       : "bg-emerald-500 text-slate-900";
 
   return (
-    <Draggable draggableId={card.id} index={index}>
+    <Draggable draggableId={card.id} index={index} isDragDisabled={localRole === "viewer"}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
