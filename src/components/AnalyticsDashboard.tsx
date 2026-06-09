@@ -488,14 +488,18 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                           strokeWidth="1.5"
                           className="hover:fill-white transition-colors duration-100 cursor-pointer"
                           onMouseMove={(e) => {
-                            const rect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
-                            setHoveredData({
-                              chart: "BURNDOWN TRAJECTORY",
-                              label: d.date,
-                              value: `Actual: ${d.actual} SP / Ideal: ${d.ideal} SP`,
-                              x: (rect?.left || 0) + window.scrollX + x - 80,
-                              y: (rect?.top || 0) + window.scrollY + y - 60,
-                            });
+                            const svgRect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
+                            const container = e.currentTarget.closest(".relative");
+                            const containerRect = container?.getBoundingClientRect();
+                            if (svgRect && containerRect && container) {
+                              setHoveredData({
+                                chart: "BURNDOWN TRAJECTORY",
+                                label: d.date,
+                                value: `Actual: ${d.actual} SP / Ideal: ${d.ideal} SP`,
+                                x: svgRect.left - containerRect.left + container.scrollLeft + x - 80,
+                                y: svgRect.top - containerRect.top + container.scrollTop + y - 60,
+                              });
+                            }
                           }}
                           onMouseLeave={() => setHoveredData(null)}
                         />
@@ -597,14 +601,18 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                           strokeWidth="1.5"
                           className="hover:opacity-80 transition-opacity duration-100 cursor-pointer"
                           onMouseMove={(e) => {
-                            const rect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
-                            setHoveredData({
-                              chart: "WEEKLY COMPLETED",
-                              label: d.label,
-                              value: `${d.storyPoints} Story Points (${d.cardCount} Cards)`,
-                              x: (rect?.left || 0) + window.scrollX + x - 40,
-                              y: (rect?.top || 0) + window.scrollY + y - 60,
-                            });
+                            const svgRect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
+                            const container = e.currentTarget.closest(".relative");
+                            const containerRect = container?.getBoundingClientRect();
+                            if (svgRect && containerRect && container) {
+                              setHoveredData({
+                                chart: "WEEKLY COMPLETED",
+                                label: d.label,
+                                value: `${d.storyPoints} Story Points (${d.cardCount} Cards)`,
+                                x: svgRect.left - containerRect.left + container.scrollLeft + x - 40,
+                                y: svgRect.top - containerRect.top + container.scrollTop + y - 60,
+                              });
+                            }
                           }}
                           onMouseLeave={() => setHoveredData(null)}
                         />

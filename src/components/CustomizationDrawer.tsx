@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Check, Paintbrush, Sliders, Image as ImageIcon, RotateCcw, Monitor } from "lucide-react";
 import { useCustomization, presetAccentColors, presetBgImages } from "./CustomizationContext";
@@ -30,6 +30,15 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
   const [customUrl, setCustomUrl] = useState(
     presetBgImages.some(img => img.value === bgImage) ? "" : bgImage
   );
+
+  // Sync local input state with context value
+  useEffect(() => {
+    if (presetBgImages.some(img => img.value === bgImage)) {
+      setCustomUrl("");
+    } else {
+      setCustomUrl(bgImage);
+    }
+  }, [bgImage]);
 
   const activePresets = theme === "endfield" ? presetAccentColors.endfield : presetAccentColors.arknights;
   const currentDefaultAccent = theme === "endfield" ? "#657136" : "#a855f7";

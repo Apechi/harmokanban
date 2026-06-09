@@ -15,7 +15,7 @@ findings:
   warning: 2
   info: 1
   total: 3
-status: issues_found
+status: resolved
 ---
 
 # Phase 07: Code Review Report
@@ -23,7 +23,7 @@ status: issues_found
 **Reviewed:** 2026-06-09T07:20:59Z
 **Depth:** standard
 **Files Reviewed:** 6
-**Status:** issues_found
+**Status:** resolved
 
 ## Summary
 
@@ -31,7 +31,7 @@ A standard-depth code review was performed on the 6 files modified during Phase 
 
 ## Warnings
 
-### WR-01: CSS Injection via Custom Background Image URL
+### [FIXED] WR-01: CSS Injection via Custom Background Image URL
 
 **File:** `src/app/page.tsx:618`
 **Issue:** The custom background image URL is inserted directly into the inline style `backgroundImage: url("${bgImage}")` without sanitization or quote escaping. A user could input a URL containing double quotes to break out of the CSS `url()` wrapper and inject custom CSS rules or trigger requests.
@@ -52,7 +52,7 @@ style={{
 }}
 ```
 
-### WR-02: Tooltip Position Offset Bug due to Relative Parent Container
+### [FIXED] WR-02: Tooltip Position Offset Bug due to Relative Parent Container
 
 **File:** `src/components/AnalyticsDashboard.tsx:496`
 **Issue:** The absolute position coordinates of chart tooltips are calculated using viewport-relative coordinates (`rect.left`, `rect.top`) combined with page scroll offsets (`window.scrollX`, `window.scrollY`). However, the tooltip element is rendered inside the dashboard main container which has `position: relative`. This causes the tooltip to be positioned incorrectly (offset by the dashboard container's position).
@@ -79,7 +79,7 @@ onMouseMove={(e) => {
 
 ## Info
 
-### IN-01: Out-of-Sync Local State for Custom BG Image URL Input
+### [FIXED] IN-01: Out-of-Sync Local State for Custom BG Image URL Input
 
 **File:** `src/components/CustomizationDrawer.tsx:30`
 **Issue:** The `customUrl` state is only initialized once when the drawer opens. If the user resets settings to defaults using the "RESET CONFIG TO DEFAULT" button, the background image resets to `/bg.webp` in the context, but the custom image URL text input retains its previous value since the local state `customUrl` is not cleared.

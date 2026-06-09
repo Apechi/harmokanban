@@ -115,6 +115,13 @@ function initializeStatusHistory(state: BoardState): BoardState {
   return changed ? { ...state, cards: updatedCards } : state;
 }
 
+const sanitizeBgUrl = (url: string) => {
+  if (!url || url === "none") return "none";
+  // Strip quotes and potential injection characters
+  const cleanUrl = url.replace(/["'\\]/g, "");
+  return `url("${cleanUrl}")`;
+};
+
 export default function Home() {
   return (
     <CustomizationProvider>
@@ -615,7 +622,7 @@ function BoardApp() {
       <div 
         className="tactical-bg-overlay" 
         style={{ 
-          backgroundImage: bgImage !== "none" ? `url("${bgImage}")` : "none",
+          backgroundImage: sanitizeBgUrl(bgImage),
           opacity: bgOpacity / 100
         }}
       />
