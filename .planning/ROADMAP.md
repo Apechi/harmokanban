@@ -11,7 +11,7 @@ KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user valu
 - ✅ **v3.0 Analytics & Performance Dashboard** - Phase 6 (shipped 2026-06-09)
 - ✅ **v4.0 Visual Identity & Customization** - Phase 7 (shipped 2026-06-09)
 - ✅ **v5.0 Room-Level Real-Time Chat** - Phase 8 (shipped 2026-06-09)
-- ⏳ **v5.1 Collaboration Notifications & Card Comments** - Phases 9-10 (Planned)
+- ✅ **v5.1 Collaboration Notifications & Card Comments** - Phases 9-10 (shipped 2026-06-09)
 
 ## Phases
 
@@ -217,8 +217,9 @@ Plans:
 
 **Plans:**
 
-- [ ] 10-01: Update peer synchronization layer to broadcast board changes and project events.
-- [ ] 10-02: Build the notification toaster system and header history feed dropdown UI.
+0/0 plans complete
+
+- [x] 10-02: Build the notification toaster system and header history feed dropdown UI.
 
 </details>
 
@@ -240,4 +241,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Theme Switcher & Styling Customization | v4.0 | 3/3 | Complete | 2026-06-09 |
 | 8. Room-level Real-time Chat | v5.0 | 2/2 | Complete | 2026-06-09 |
 | 9. Card-level Discussion & Comment Threads | v5.1 | 2/2 | Complete | 2026-06-09 |
-| 10. Real-time Collaboration Notifications | v5.1 | 0/2 | Planned | |
+| 10. Real-time Collaboration Notifications | v5.1 | 0/0 | Complete    | 2026-06-09 |

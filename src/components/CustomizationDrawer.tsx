@@ -10,6 +10,7 @@ import {
   Image as ImageIcon,
   RotateCcw,
   Monitor,
+  Volume2,
 } from "lucide-react";
 import {
   useCustomization,
@@ -33,12 +34,14 @@ export default function CustomizationDrawer({
     showGrid,
     showScanlines,
     bgImage,
+    soundEnabled,
     setTheme,
     setAccentColor,
     setBgOpacity,
     setShowGrid,
     setShowScanlines,
     setBgImage,
+    setSoundEnabled,
     resetToDefaults,
   } = useCustomization();
 
@@ -265,6 +268,24 @@ export default function CustomizationDrawer({
                       }`}
                     >
                       {showScanlines ? "ENABLED" : "DISABLED"}
+                    </button>
+                  </div>
+
+                  {/* Audio Cues Toggle */}
+                  <div className="flex items-center justify-between bg-brand-bg/30 px-3 py-2 border border-brand-accent/10 rounded-xs">
+                    <span className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <Volume2 size={13} className="text-brand-accent" />
+                      TACTICAL AUDIO CUES
+                    </span>
+                    <button
+                      onClick={() => setSoundEnabled(!soundEnabled)}
+                      className={`px-3 py-1 rounded-xs text-[10px] font-bold border uppercase transition-all cursor-pointer ${
+                        soundEnabled
+                          ? "bg-brand-accent/25 border-brand-accent text-brand-accent"
+                          : "bg-slate-800/40 border-slate-700 text-slate-500"
+                      }`}
+                    >
+                      {soundEnabled ? "ENABLED" : "DISABLED"}
                     </button>
                   </div>
 

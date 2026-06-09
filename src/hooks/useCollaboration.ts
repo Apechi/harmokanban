@@ -37,7 +37,13 @@ function getRandomMaxConns() {
 
 export function useCollaboration(
   initialLocalState: BoardState | null,
-  setLocalState: (state: BoardState) => void
+  setLocalState: (state: BoardState) => void,
+  onRemoteUpdate?: (
+    type: "chat" | "card" | "project",
+    title: string,
+    message: string,
+    metadata?: Record<string, unknown>
+  ) => void
 ) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [roomPassword, setRoomPassword] = useState<string | null>(null);
@@ -74,6 +80,12 @@ export function useCollaboration(
   const isSyncingFromYjsRef = useRef(false);
   const ownerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevPeersRef = useRef<PeerInfo[]>([]);
+
+  // Ref to track the current board state for delta detection
+  const boardStateRef = useRef<BoardState | null>(initialLocalState);
+  useEffect(() => {
+    boardStateRef.current = initialLocalState;
+  }, [initialLocalState]);
 
   // Sync callsign to localStorage if generated
   useEffect(() => {
@@ -158,8 +170,24 @@ export function useCollaboration(
     persistenceRef.current = persistence;
 
     // Observe changes on chat messages array
-    const handleChatMessagesChange = () => {
+    const handleChatMessagesChange = (event: Y.YArrayEvent<ChatMessage>) => {
       setChatMessages(yChatArray.toArray());
+      
+      // Trigger notifications for new remote messages
+      if (event.transaction.local) return;
+      
+      event.delta.forEach((d) => {
+        if (d.insert) {
+          const inserted = d.insert as ChatMessage[];
+          inserted.forEach((msg) => {
+            if (msg.senderId !== localUserId && !msg.isSystem && onRemoteUpdate) {
+              onRemoteUpdate("chat", `COMMS LINK: ${msg.senderName}`, msg.text, {
+                chatMessageId: msg.id,
+              });
+            }
+          });
+        }
+      });
     };
     yChatArray.observe(handleChatMessagesChange);
     // Initial load
@@ -235,7 +263,7 @@ export function useCollaboration(
     };
 
     // Observe changes on room metadata and roles
-    yMetaMap.observe(() => {
+    yMetaMap.observe((event) => {
       const currentOwnerId = yMetaMap.get("ownerId") as string | undefined;
       if (currentOwnerId) {
         if (ownerTimerRef.current) {
@@ -248,6 +276,16 @@ export function useCollaboration(
         } else {
           const assignedRole = yRolesMap.get(localUserId) as "editor" | "viewer" | undefined;
           setLocalRole(assignedRole || "viewer");
+        }
+      }
+
+      // Handle project renaming notifications
+      if (!event.transaction.local && event.keysChanged.has("projectName")) {
+        const renamedProject = yMetaMap.get("projectName") as string | undefined;
+        if (renamedProject && onRemoteUpdate) {
+          onRemoteUpdate("project", "Sector Renamed", `Operational sector renamed to: ${renamedProject}`, {
+            projectId: cleanRoomCode,
+          });
         }
       }
     });
@@ -362,6 +400,29 @@ export function useCollaboration(
       isSyncingFromYjsRef.current = true;
       const updatedState = syncYjsToBoardState(yRootMap);
       if (updatedState) {
+        // Compare with boardStateRef.current to detect modifications
+        if (boardStateRef.current && onRemoteUpdate) {
+          // Compare cards
+          Object.keys(updatedState.cards).forEach((id) => {
+            const newCard = updatedState.cards[id];
+            const oldCard = boardStateRef.current?.cards[id];
+
+            if (!oldCard) {
+              onRemoteUpdate("card", "Task Deployed", `Task ${newCard.code} (${newCard.title}) was deployed.`, {
+                cardId: newCard.id,
+              });
+            } else if (newCard.columnId !== oldCard.columnId) {
+              const colTitle = updatedState.columns[newCard.columnId]?.title || "another column";
+              onRemoteUpdate("card", "Task Relocated", `Task ${newCard.code} (${newCard.title}) moved to ${colTitle}.`, {
+                cardId: newCard.id,
+              });
+            } else if (JSON.stringify(newCard) !== JSON.stringify(oldCard)) {
+              onRemoteUpdate("card", "Task Details Updated", `Task ${newCard.code} (${newCard.title}) details were modified.`, {
+                cardId: newCard.id,
+              });
+            }
+          });
+        }
         setLocalState(updatedState);
         saveBoardState(updatedState, cleanRoomCode);
       }
@@ -418,6 +479,14 @@ export function useCollaboration(
     syncBoardStateToYjs(newState, yRootMap, origin);
   };
 
+  // Update project name in room metadata
+  const updateProjectName = (name: string) => {
+    if (ydocRef.current && roomId) {
+      const yMetaMap = ydocRef.current.getMap("room-metadata");
+      yMetaMap.set("projectName", name);
+    }
+  };
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -465,5 +534,6 @@ export function useCollaboration(
     updateCursor,
     broadcastBoardState,
     sendChatMessage,
+    updateProjectName,
   };
 }

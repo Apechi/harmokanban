@@ -191,4 +191,13 @@ body {
   background-size: 100% 4px;
 }
 
+@keyframes toast-decay {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.animate-toast-decay {
+  animation: toast-decay linear forwards;
+}
+
 

@@ -13,7 +13,7 @@ import {
   Paintbrush,
   MessageSquare,
 } from "lucide-react";
-import { BoardState, TaskCard, BoardColumn, Project } from "@/types";
+import { BoardState, TaskCard, BoardColumn, Project, NotificationItem } from "@/types";
 import {
   loadBoardState,
   saveBoardState,
@@ -21,6 +21,8 @@ import {
   saveProjectsList,
   DEFAULT_PROJECT_ID,
   deleteBoardState,
+  loadNotifications,
+  saveNotifications,
 } from "@/lib/db";
 import Board from "@/components/Board";
 import CardModal from "@/components/CardModal";
@@ -42,6 +44,9 @@ import {
 } from "@/components/CustomizationContext";
 import CustomizationDrawer from "@/components/CustomizationDrawer";
 import { ConfirmProvider } from "@/components/ConfirmModal";
+import NotificationFeed from "@/components/NotificationFeed";
+import NotificationToaster from "@/components/NotificationToaster";
+import { playNotificationSound } from "@/lib/audio";
 
 
 // Default seed data if IndexedDB is empty
@@ -189,6 +194,61 @@ function BoardApp() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Notifications system state
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [toasts, setToasts] = useState<NotificationItem[]>([]);
+  const [pendingOpenCardId, setPendingOpenCardId] = useState<string | null>(null);
+
+  const { bgOpacity, showGrid, showScanlines, bgImage, soundEnabled } = useCustomization();
+
+  // Helper to add a notification locally and trigger audio/toaster
+  const addNotification = (
+    type: "chat" | "card" | "project",
+    title: string,
+    message: string,
+    metadata?: Record<string, unknown>
+  ) => {
+    const newNotif: NotificationItem = {
+      id: crypto.randomUUID(),
+      projectId: activeProjectId,
+      type,
+      title,
+      message,
+      timestamp: Date.now(),
+      read: false,
+      metadata,
+    };
+
+    setNotifications((prev) => {
+      const updated = [newNotif, ...prev];
+      saveNotifications(activeProjectId, updated);
+      return updated;
+    });
+
+    setToasts((prev) => [newNotif, ...prev]);
+
+    if (soundEnabled) {
+      playNotificationSound(type);
+    }
+  };
+
+  // Remote updates event handler callback
+  const handleRemoteUpdate = (
+    type: "chat" | "card" | "project",
+    title: string,
+    message: string,
+    metadata?: Record<string, unknown>
+  ) => {
+    if (type === "chat") {
+      // Only alert if the chat drawer panel is not open
+      if (!isChatOpen) {
+        addNotification(type, title, message, metadata);
+      }
+    } else {
+      addNotification(type, title, message, metadata);
+    }
+  };
+
   // Keep activeCard synchronized with boardState changes (e.g. updates from remote peers)
   useEffect(() => {
     if (activeCard && boardState) {
@@ -199,7 +259,24 @@ function BoardApp() {
     }
   }, [boardState, activeCard]);
 
-  const { bgOpacity, showGrid, showScanlines, bgImage } = useCustomization();
+  // Open pending card modal details when board state updates (after project switch)
+  useEffect(() => {
+    if (pendingOpenCardId && boardState && boardState.cards[pendingOpenCardId]) {
+      const card = boardState.cards[pendingOpenCardId];
+      handleEditCard(card);
+      setPendingOpenCardId(null);
+    }
+  }, [boardState, pendingOpenCardId]);
+
+  // Load notifications when active project changes
+  useEffect(() => {
+    async function fetchNotifications() {
+      const list = await loadNotifications(activeProjectId);
+      setNotifications(list || []);
+      setToasts([]);
+    }
+    fetchNotifications();
+  }, [activeProjectId]);
 
   // Initialize collaboration hook
   const {
@@ -222,7 +299,52 @@ function BoardApp() {
     updateCursor,
     broadcastBoardState,
     sendChatMessage,
-  } = useCollaboration(boardState, setBoardState);
+    updateProjectName,
+  } = useCollaboration(boardState, setBoardState, handleRemoteUpdate);
+
+  // Sync project name to room metadata when connected
+  useEffect(() => {
+    if (isConnected && activeProjectId && projects.length > 0) {
+      const activeProj = projects.find((p) => p.id === activeProjectId);
+      if (activeProj) {
+        updateProjectName(activeProj.name);
+      }
+    }
+  }, [isConnected, activeProjectId, projects, updateProjectName]);
+
+  const handleNotificationClick = async (notif: NotificationItem) => {
+    handleReadNotification(notif.id);
+
+    if (notif.type === "chat") {
+      setIsChatOpen(true);
+    } else if (notif.type === "card" && notif.metadata?.cardId) {
+      if (notif.projectId !== activeProjectId) {
+        await handleSelectProject(notif.projectId);
+      }
+      setPendingOpenCardId(notif.metadata.cardId);
+    } else if (notif.type === "project" && notif.metadata?.projectId) {
+      if (notif.projectId !== activeProjectId) {
+        handleSelectProject(notif.projectId);
+      }
+    }
+  };
+
+  const handleReadNotification = (id: string) => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+      saveNotifications(activeProjectId, updated);
+      return updated;
+    });
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    saveNotifications(activeProjectId, []);
+  };
+
+  const handleDismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Track unread messages count
   const chatMessagesLengthRef = useRef(0);
@@ -929,6 +1051,14 @@ function BoardApp() {
             </button>
           )}
 
+          {/* Notification Feed Button */}
+          <NotificationFeed
+            notifications={notifications}
+            onClearAll={handleClearNotifications}
+            onReadNotification={handleReadNotification}
+            onClickNotification={handleNotificationClick}
+          />
+
           <button
             onClick={handleAddColumn}
             className="px-4 py-2 border border-brand-accent hover:border-brand-accent/80 bg-brand-accent/10 hover:bg-brand-accent/20 text-slate-100 rounded-xs text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
@@ -1050,6 +1180,13 @@ function BoardApp() {
         chatMessages={chatMessages}
         localUserId={localUserId}
         sendChatMessage={sendChatMessage}
+      />
+
+      {/* Notification Toaster Overlay */}
+      <NotificationToaster
+        toasts={toasts}
+        onDismiss={handleDismissToast}
+        onClickToast={handleNotificationClick}
       />
     </div>
   );

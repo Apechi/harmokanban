@@ -94,10 +94,10 @@
 
 ### Collaboration Notifications (NOTIF)
 
-- [ ] **NOTIF-01**: User receives real-time toast notification alerts for collaboration events (new chat messages when chat is closed, card added/moved/updated, and project created/renamed by peers).
-- [ ] **NOTIF-02**: Notifications use distinct styling, icons, and categories (Chat, Card, Project) matching the tactical theme.
-- [ ] **NOTIF-03**: Notifications are interactive: clicking a notification performs a contextual action (opens card details, opens room chat, or switches project).
-- [ ] **NOTIF-04**: A scrollable notification history/feed UI panel is accessible from the header to review recent collaboration events.
+- [x] **NOTIF-01**: User receives real-time toast notification alerts for collaboration events (new chat messages when chat is closed, card added/moved/updated, and project created/renamed by peers).
+- [x] **NOTIF-02**: Notifications use distinct styling, icons, and categories (Chat, Card, Project) matching the tactical theme.
+- [x] **NOTIF-03**: Notifications are interactive: clicking a notification performs a contextual action (opens card details, opens room chat, or switches project).
+- [x] **NOTIF-04**: A scrollable notification history/feed UI panel is accessible from the header to review recent collaboration events.
 
 ## Out of Scope
 
@@ -149,10 +149,10 @@
 | CHAT-03 | Phase 9 | Pending |
 | CHAT-04 | Phase 9 | Pending |
 | CHAT-05 | Phase 8, 9 | Pending |
-| NOTIF-01 | Phase 10 | Pending |
-| NOTIF-02 | Phase 10 | Pending |
-| NOTIF-03 | Phase 10 | Pending |
-| NOTIF-04 | Phase 10 | Pending |
+| NOTIF-01 | Phase 10 | Complete |
+| NOTIF-02 | Phase 10 | Complete |
+| NOTIF-03 | Phase 10 | Complete |
+| NOTIF-04 | Phase 10 | Complete |
 
 **Coverage:**
 

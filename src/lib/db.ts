@@ -1,5 +1,5 @@
 import { openDB, IDBPDatabase } from 'idb';
-import { BoardState, Project } from '@/types';
+import { BoardState, Project, NotificationItem } from '@/types';
 
 const DB_NAME = 'kanban-harmo-db';
 const STORE_NAME = 'board-store';
@@ -80,5 +80,26 @@ export async function deleteBoardState(projectId: string): Promise<void> {
     console.error(`Failed to delete board state for project ${projectId} from IndexedDB:`, error);
   }
 }
+
+export async function saveNotifications(projectId: string, notifications: NotificationItem[]): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put(STORE_NAME, notifications, `notifications-${projectId}`);
+  } catch (error) {
+    console.error(`Failed to save notifications for project ${projectId} to IndexedDB:`, error);
+  }
+}
+
+export async function loadNotifications(projectId: string): Promise<NotificationItem[] | null> {
+  try {
+    const db = await getDB();
+    const notifications = await db.get(STORE_NAME, `notifications-${projectId}`);
+    return notifications || null;
+  } catch (error) {
+    console.error(`Failed to load notifications for project ${projectId} from IndexedDB:`, error);
+    return null;
+  }
+}
+
 
 

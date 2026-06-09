@@ -68,4 +68,20 @@ export interface Project {
   createdAt: number;
 }
 
+export interface NotificationItem {
+  id: string;
+  projectId: string;
+  type: 'chat' | 'card' | 'project';
+  title: string;
+  message: string;
+  timestamp: number;
+  read: boolean;
+  metadata?: {
+    cardId?: string;
+    columnId?: string;
+    projectId?: string;
+  };
+}
+
+
 

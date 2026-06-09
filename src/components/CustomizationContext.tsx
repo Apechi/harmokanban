@@ -11,12 +11,14 @@ interface CustomizationContextProps {
   showGrid: boolean;
   showScanlines: boolean;
   bgImage: string; // URL or preset identifier
+  soundEnabled: boolean;
   setTheme: (t: Theme) => void;
   setAccentColor: (color: string) => void;
   setBgOpacity: (opacity: number) => void;
   setShowGrid: (show: boolean) => void;
   setShowScanlines: (show: boolean) => void;
   setBgImage: (url: string) => void;
+  setSoundEnabled: (enabled: boolean) => void;
   resetToDefaults: () => void;
 }
 
@@ -51,6 +53,7 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [showGrid, setShowGridState] = useState<boolean>(true);
   const [showScanlines, setShowScanlinesState] = useState<boolean>(true);
   const [bgImage, setBgImageState] = useState<string>("/bg.webp");
+  const [soundEnabled, setSoundEnabledState] = useState<boolean>(true);
   const [mounted, setMounted] = useState(false);
 
   // Load from local storage
@@ -84,6 +87,11 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
       const storedBgImage = localStorage.getItem("kh-bg-image");
       if (storedBgImage !== null) {
         setBgImageState(storedBgImage);
+      }
+
+      const storedSound = localStorage.getItem("kh-sound-enabled");
+      if (storedSound !== null) {
+        setSoundEnabledState(storedSound === "true");
       }
     } catch (e) {
       console.error("Failed to load customization preferences", e);
@@ -139,6 +147,11 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem("kh-bg-image", bgImage);
   }, [bgImage, mounted]);
 
+  useEffect(() => {
+    if (!mounted) return;
+    localStorage.setItem("kh-sound-enabled", soundEnabled.toString());
+  }, [soundEnabled, mounted]);
+
   const setTheme = (t: Theme) => {
     setThemeState(t);
     // If setting to theme default accent color, clear custom accent
@@ -165,6 +178,10 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
     setBgImageState(url);
   };
 
+  const setSoundEnabled = (enabled: boolean) => {
+    setSoundEnabledState(enabled);
+  };
+
   const resetToDefaults = () => {
     setThemeState("arknights");
     setAccentColorState("");
@@ -172,6 +189,7 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
     setShowGridState(true);
     setShowScanlinesState(true);
     setBgImageState("/bg.webp");
+    setSoundEnabledState(true);
   };
 
   return (
@@ -183,12 +201,14 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
         showGrid,
         showScanlines,
         bgImage,
+        soundEnabled,
         setTheme,
         setAccentColor,
         setBgOpacity,
         setShowGrid,
         setShowScanlines,
         setBgImage,
+        setSoundEnabled,
         resetToDefaults,
       }}
     >
