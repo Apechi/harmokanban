@@ -8,15 +8,16 @@ An intuitive and advanced Kanban web application designed specifically for start
 
 Enable rapid, frictionless startup project planning with a highly interactive, collaborative client-side board and Gantt visualization.
 
-## Current Milestone: v4.0 Visual Identity & Customization
+## Current Milestone: v5.0 Real-time Discussion & Chat
 
-**Goal:** Provide a configurable look-and-feel system allowing users to select standard themes (Arknights, Arknights Endfield), pick custom accent colors, and configure background overlays.
+**Goal:** Provide startup teams with real-time collaboration communication channels including room-level group chat and card-level comment/discussion threads.
 
 **Target features:**
-- Theme Switcher component (Arknights default dark vs Arknights Endfield warm light/beige)
-- Dynamic primary/accent color customizer
-- Background overlay controls (opacity adjust, grid pattern toggle)
-- Client-side persistence for theme preferences
+- Room Chat Drawer/Panel for collaborative workspace messaging
+- Task-specific discussion and comment threads within Card details
+- Real-time comment and message synchronization using Yjs/WebRTC
+- Operator user attribution (using squad callsigns and IDs) for messages and comments
+- Monospace/tactical design matching the app's visual identity (Arknights & Endfield themes)
 
 ## Requirements
 
@@ -35,18 +36,22 @@ Enable rapid, frictionless startup project planning with a highly interactive, c
 - [x] Interactive SVG Burndown Chart, Velocity Tracker, and lead/cycle time stats (Phase 6)
 - [x] Task distribution breakdown charts (by Column, Priority, Assignee) (Phase 6)
 - [x] Interactive Analytics Dashboard View with tactical SVG charts (Phase 6)
+- [x] Theme selector with Arknights (default dark) and Arknights Endfield (light/beige) themes (Phase 7)
+- [x] Accent color selection/override functionality (Phase 7)
+- [x] Background overlay customization and opacity settings (Phase 7)
+- [x] Theme state client persistence (localStorage / Yjs state) (Phase 7)
 
 ### Active
 
-- [ ] Theme selector with Arknights (default dark) and Arknights Endfield (light/beige) themes
-- [ ] Accent color selection/override functionality
-- [ ] Background overlay customization and opacity settings
-- [ ] Theme state client persistence (localStorage / Yjs state)
+- [ ] Room Chat Drawer/Panel for real-time peer messaging
+- [ ] Task card comment threads showing operator identity and message timestamps
+- [ ] Peer-to-peer real-time sync of chat history and comments via Yjs
+- [ ] Offline storage and persistence of chat/comment logs via IndexedDB
 
 ### Out of Scope
 
-- [ ] Standard centralized backend database/authentication (v1, v2 and v3 focus purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven)
-- [ ] Custom external integration plugins, e.g. GitHub sync, slack bot (deferred to v4)
+- [ ] Standard centralized backend database/authentication (v1-v5 focus purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven)
+- [ ] Custom external integration plugins, e.g. GitHub sync, slack bot (deferred to v6)
 
 ## Context
 
@@ -84,4 +89,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-09 after Milestone v2.0 completion and v3.0 start*
+*Last updated: 2026-06-09 after Milestone v4.0 completion and v5.0 start*

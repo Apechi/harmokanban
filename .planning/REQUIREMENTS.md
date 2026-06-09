@@ -71,19 +71,29 @@
 - [x] **METRIC-06**: All charts must render using lightweight, pure SVG tailored to the tactical monospace theme, complete with interactive mouse-hover details.
 - [x] **METRIC-07**: Introduce a dedicated "Analytics Dashboard" view toggleable from the main layout.
 
-## v4 Requirements (Active)
+## v4 Requirements (Completed)
 
 ### Theme & Customization (THEME)
 
-- [ ] **THEME-01**: User can toggle between two built-in visual themes: "Arknights" (default dark tactical styling) and "Arknights Endfield" (warm off-white/beige modern light styling) via a Theme Switcher UI.
-- [ ] **THEME-02**: User can select custom primary/accent colors (using a picker or color preset options) to change the visual highlights, borders, and shadows throughout the app.
-- [ ] **THEME-03**: User can configure and toggle the background overlay (e.g. enable/disable grid lines, adjust scanlines style, and change transparency/opacity).
-- [ ] **THEME-04**: Custom theme preferences are persisted client-side in local storage.
+- [x] **THEME-01**: User can toggle between two built-in visual themes: "Arknights" (default dark tactical styling) and "Arknights Endfield" (warm off-white/beige modern light styling) via a Theme Switcher UI.
+- [x] **THEME-02**: User can select custom primary/accent colors (using a picker or color preset options) to change the visual highlights, borders, and shadows throughout the app.
+- [x] **THEME-03**: User can configure and toggle the background overlay (e.g. enable/disable grid lines, adjust scanlines style, and change transparency/opacity).
+- [x] **THEME-04**: Custom theme preferences are persisted client-side in local storage.
+
+## v5 Requirements (Active)
+
+### Chat & Discussions (CHAT)
+
+- [ ] **CHAT-01**: User can toggle a Room Chat Drawer/Panel from the main dashboard when connected to a collaborative room.
+- [ ] **CHAT-02**: Room-level chat messages sync in real-time between peers using Yjs shared array structure, maintaining a scrollable message log with timestamps and sender attribution.
+- [ ] **CHAT-03**: User can add text comments to individual task cards inside the Card details modal.
+- [ ] **CHAT-04**: Card-level comments sync in real-time across peers, recording the operator's callsign, user ID, and a creation timestamp.
+- [ ] **CHAT-05**: Chat and comment history are persisted offline locally in IndexedDB to maintain session history.
 
 ## Out of Scope
 
-- [ ] Standard centralized backend database/authentication (v1, v2, v3, and v4 focus purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven).
-- [ ] Custom external integration plugins, e.g. GitHub sync, slack bot (deferred to v5).
+- [ ] Standard centralized backend database/authentication (v1-v5 focus purely on WebRTC/Yjs P2P sync with local/browser state fallback to keep it serverless and client-driven).
+- [ ] Custom external integration plugins, e.g. GitHub sync, slack bot (deferred to v6).
 
 ## Traceability
 
@@ -121,16 +131,22 @@
 | METRIC-05 | Phase 6 | Completed |
 | METRIC-06 | Phase 6 | Completed |
 | METRIC-07 | Phase 6 | Completed |
-| THEME-01 | Phase 7 | Pending |
-| THEME-02 | Phase 7 | Pending |
-| THEME-03 | Phase 7 | Pending |
-| THEME-04 | Phase 7 | Pending |
+| THEME-01 | Phase 7 | Completed |
+| THEME-02 | Phase 7 | Completed |
+| THEME-03 | Phase 7 | Completed |
+| THEME-04 | Phase 7 | Completed |
+| CHAT-01 | Phase 8 | Pending |
+| CHAT-02 | Phase 8 | Pending |
+| CHAT-03 | Phase 9 | Pending |
+| CHAT-04 | Phase 9 | Pending |
+| CHAT-05 | Phase 8, 9 | Pending |
 
 **Coverage:**
 
 - v1 requirements: 18 total | 18 completed
 - v2 requirements: 7 total | 7 completed
 - v3 requirements: 7 total | 7 completed
-- v4 requirements: 4 total | 0 completed
-- Mapped to phases: 36 / 36
+- v4 requirements: 4 total | 4 completed
+- v5 requirements: 5 total | 0 completed
+- Mapped to phases: 41 / 41
 - Unmapped: 0 ✓

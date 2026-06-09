@@ -9,7 +9,8 @@ KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user valu
 - ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-06-08)
 - ✅ **v2.0 Advanced Collaboration & Multi-Project Support** - Phases 4-5 (shipped 2026-06-09)
 - ✅ **v3.0 Analytics & Performance Dashboard** - Phase 6 (shipped 2026-06-09)
-- ⏳ **v4.0 Visual Identity & Customization** - Phase 7 (Planned)
+- ✅ **v4.0 Visual Identity & Customization** - Phase 7 (shipped 2026-06-09)
+- ⏳ **v5.0 Real-time Discussion & Chat** - Phases 8-9 (Planned)
 
 ## Phases
 
@@ -129,8 +130,10 @@ Plans:
 
 </details>
 
-<details open>
-<summary>⏳ v4.0 Visual Identity & Customization (Planned)</summary>
+</details>
+
+<details>
+<summary>✅ v4.0 Visual Identity & Customization (Shipped 2026-06-09)</summary>
 
 **Milestone Goal:** Provide a configurable look-and-feel system allowing users to select standard themes (Arknights, Arknights Endfield), pick custom accent colors, and configure background overlays.
 
@@ -154,12 +157,52 @@ Plans:
 
 </details>
 
+<details open>
+<summary>⏳ v5.0 Real-time Discussion & Chat (Planned)</summary>
+
+**Milestone Goal:** Enable real-time peer communication channels within rooms and boards via a group room chat panel and card-level comment threads.
+
+#### Phase 8: Room-level Real-time Chat
+
+**Goal:** Implement a slide-out room chat drawer allowing real-time workspace-wide peer messaging.
+**Depends on:** Phase 7
+**Requirements:** CHAT-01, CHAT-02, CHAT-05
+**Success Criteria** (what must be TRUE):
+
+  1. User can toggle a Room Chat Drawer/Panel from the main board navigation when connected to a collaborative room.
+  2. Message input supports sending text messages that immediately synchronize across all connected peers in real-time.
+  3. Message history shows the sender's callsign, user ID, exact timestamp, and auto-scrolls to the newest message.
+  4. Chat history is preserved locally using IndexedDB for offline persistence.
+
+**Plans:**
+
+- [ ] 08-01: Update collaboration store/provider to introduce Yjs shared array structure for chat messages.
+- [ ] 08-02: Build the Room Chat Drawer UI with a monospace, tactical grid styling.
+
+#### Phase 9: Card-level Discussion & Comment Threads
+
+**Goal:** Build a task-specific comment section inside the Card details modal for structured card discussion.
+**Depends on:** Phase 8
+**Requirements:** CHAT-03, CHAT-04, CHAT-05
+**Success Criteria** (what must be TRUE):
+
+  1. Card modal displays a "Discussions" or "Comments" tab/section.
+  2. Users can post, edit, and delete comments, which instantly sync with other peers viewing the same card.
+  3. Each comment has a timestamp, the author's callsign, and options to edit/delete only if authored by the local user.
+
+**Plans:**
+
+- [ ] 09-01: Update task card state schema and Yjs sync layer to support a card comments array.
+- [ ] 09-02: Add a fully styled, interactive comments/discussion feed section to CardModal.
+
+</details>
+
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -170,3 +213,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 5. Collaborative Presence & Role Controls | v2.0 | 1/1 | Complete | 2026-06-09 |
 | 6. Analytics & Performance Dashboard | v3.0 | 4/4 | Complete | 2026-06-09 |
 | 7. Theme Switcher & Styling Customization | v4.0 | 3/3 | Complete | 2026-06-09 |
+| 8. Room-level Real-time Chat | v5.0 | 0/2 | Planned | |
+| 9. Card-level Discussion & Comment Threads | v5.0 | 0/2 | Planned | |
