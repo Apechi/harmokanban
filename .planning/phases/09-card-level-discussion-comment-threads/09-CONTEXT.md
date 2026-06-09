@@ -1,7 +1,7 @@
 # Phase 9: Card-level Discussion & Comment Threads - Context
 
 **Gathered:** 2026-06-09
-**Status:** Ready for planning
+**Status:** Complete
 
 <domain>
 ## Phase Boundary

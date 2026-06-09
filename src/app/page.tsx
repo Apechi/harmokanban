@@ -981,6 +981,9 @@ function BoardApp() {
         onDelete={handleDeleteCard}
         localRole={localRole}
         viewers={activeCard ? activeCardViewers[activeCard.id] || [] : []}
+        localUserId={localUserId}
+        localCallsign={localCallsign}
+        peers={peers}
       />
 
       {/* Collaborate side drawer overlay */}

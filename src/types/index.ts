@@ -11,6 +11,14 @@ export interface StatusTransition {
   timestamp: number;
 }
 
+export interface CardComment {
+  id: string;
+  senderId: string;
+  senderCallsign: string;
+  content: string;
+  timestamp: number;
+}
+
 export interface TaskCard {
   id: string;
   columnId: string;
@@ -26,7 +34,9 @@ export interface TaskCard {
   createdAt: number;
   assignee?: string | null;
   statusHistory?: StatusTransition[];
+  comments?: CardComment[];
 }
+
 
 export interface BoardColumn {
   id: string;

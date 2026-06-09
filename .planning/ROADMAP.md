@@ -200,8 +200,8 @@ Plans:
 
 **Plans:**
 
-- [ ] 09-01: Update task card state schema and Yjs sync layer to support a card comments array.
-- [ ] 09-02: Add a fully styled, interactive comments/discussion feed section to CardModal.
+- [x] 09-01: Update task card state schema and Yjs sync layer to support a card comments array.
+- [x] 09-02: Add a fully styled, interactive comments/discussion feed section to CardModal.
 
 #### Phase 10: Real-time Collaboration Notifications
 
@@ -239,5 +239,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Analytics & Performance Dashboard | v3.0 | 4/4 | Complete | 2026-06-09 |
 | 7. Theme Switcher & Styling Customization | v4.0 | 3/3 | Complete | 2026-06-09 |
 | 8. Room-level Real-time Chat | v5.0 | 2/2 | Complete | 2026-06-09 |
-| 9. Card-level Discussion & Comment Threads | v5.1 | 0/2 | Planned | |
+| 9. Card-level Discussion & Comment Threads | v5.1 | 2/2 | Complete | 2026-06-09 |
 | 10. Real-time Collaboration Notifications | v5.1 | 0/2 | Planned | |

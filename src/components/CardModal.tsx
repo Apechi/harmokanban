@@ -1,11 +1,38 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TaskCard, Priority, SubTask } from "@/types";
-import { X, Calendar, Plus, Trash2, CheckSquare, Tag, AlignLeft, Hash, User } from "lucide-react";
+import { TaskCard, Priority, SubTask, CardComment } from "@/types";
+import { PeerInfo } from "@/hooks/useCollaboration";
+import { X, Calendar, Plus, Trash2, CheckSquare, Tag, AlignLeft, Hash, User, MessageSquare, Send } from "lucide-react";
 import { useConfirm } from "./ConfirmModal";
 
+
+function CommentContent({ text }: { text: string }) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+
+  return (
+    <span className="break-all whitespace-pre-wrap">
+      {parts.map((part, i) => {
+        if (part.match(urlRegex)) {
+          return (
+            <a
+              key={i}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-accent underline break-all inline-flex items-center gap-0.5"
+            >
+              {part}
+            </a>
+          );
+        }
+        return part;
+      })}
+    </span>
+  );
+}
 
 interface CardModalProps {
   card: TaskCard | null;
@@ -15,6 +42,9 @@ interface CardModalProps {
   onDelete: (cardId: string, columnId: string) => void;
   localRole?: "editor" | "viewer";
   viewers?: string[];
+  localUserId: string;
+  localCallsign: string;
+  peers: PeerInfo[];
 }
 
 export default function CardModal({
@@ -25,6 +55,9 @@ export default function CardModal({
   onDelete,
   localRole = "editor",
   viewers = [],
+  localUserId,
+  localCallsign,
+  peers,
 }: CardModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -39,6 +72,14 @@ export default function CardModal({
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState("");
   const [assignee, setAssignee] = useState("");
+
+  const [comments, setComments] = useState<CardComment[]>([]);
+  const [newCommentText, setNewCommentText] = useState("");
+  const [activeTab, setActiveTab] = useState<"dossier" | "comments">("dossier");
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  
+  const commentsEndRef = useRef<HTMLDivElement | null>(null);
 
   const toDateTimeLocalString = (val: string | null | undefined): string => {
     if (!val) return "";
@@ -59,8 +100,16 @@ export default function CardModal({
       setTagsInput(card.tags ? card.tags.join(", ") : "");
       setSubTasks(card.subTasks || []);
       setAssignee(card.assignee || "");
+      setComments(card.comments || []);
     }
   }, [card]);
+
+  // Scroll to bottom of comments
+  useEffect(() => {
+    if (activeTab === "comments") {
+      commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [comments, activeTab]);
 
   if (!card) return null;
 
@@ -87,10 +136,96 @@ export default function CardModal({
       tags: parsedTags,
       subTasks,
       assignee: assignee.trim() || null,
+      comments,
     };
 
     onSave(updatedCard);
     onClose();
+  };
+
+  const persistComments = (updatedComments: CardComment[]) => {
+    setComments(updatedComments);
+    const parsedTags = tagsInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    const updatedCard: TaskCard = {
+      ...card,
+      title: title.trim() || "Untitled Mission",
+      description: description.trim(),
+      priority,
+      dueDate: dueDate || null,
+      startDate: startDate || null,
+      storyPoints: storyPoints === null || isNaN(storyPoints) ? null : Number(storyPoints),
+      tags: parsedTags,
+      subTasks,
+      assignee: assignee.trim() || null,
+      comments: updatedComments,
+    };
+    onSave(updatedCard);
+  };
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (localRole === "viewer") return;
+    if (!newCommentText.trim()) return;
+
+    const newComment: CardComment = {
+      id: crypto.randomUUID(),
+      senderId: localUserId,
+      senderCallsign: localCallsign || "Operator",
+      content: newCommentText.trim(),
+      timestamp: Date.now(),
+    };
+
+    const updatedComments = [...comments, newComment];
+    persistComments(updatedComments);
+    setNewCommentText("");
+  };
+
+  const handleSaveEditComment = (commentId: string) => {
+    if (localRole === "viewer") return;
+    if (!editingCommentText.trim()) return;
+
+    const updatedComments = comments.map((c) =>
+      c.id === commentId ? { ...c, content: editingCommentText.trim() } : c
+    );
+    persistComments(updatedComments);
+    setEditingCommentId(null);
+    setEditingCommentText("");
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (localRole === "viewer") return;
+
+    const confirmed = await confirm({
+      title: "Delete Comment?",
+      message: "Are you sure you want to permanently delete this comment?",
+      confirmText: "DELETE",
+      severity: "danger",
+    });
+
+    if (confirmed) {
+      const updatedComments = comments.filter((c) => c.id !== commentId);
+      persistComments(updatedComments);
+    }
+  };
+
+  const resolveCallsign = (comment: CardComment) => {
+    if (comment.senderId === localUserId) {
+      return `${localCallsign} (YOU)`;
+    }
+    const peer = peers.find((p) => p.userId === comment.senderId);
+    if (peer) {
+      return peer.name;
+    }
+    return comment.senderCallsign;
+  };
+
+  const formatTime = (ts: number) => {
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
   };
 
   const handleAddSubTask = (e: React.FormEvent) => {
@@ -167,213 +302,371 @@ export default function CardModal({
               </button>
             </div>
 
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Mission Title Input */}
-              <div className="space-y-1">
-                <label className="tactical-label text-slate-500 text-[10px]">
-                  MISSION DESCRIPTION / TITLE
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  disabled={localRole === "viewer"}
-                  className="w-full bg-brand-bg/60 text-slate-100 text-lg font-bold px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
-                  placeholder="Mission title..."
-                />
-              </div>
+            {/* Tab Switcher */}
+            <div className="flex border-b border-brand-accent/20 bg-brand-bg/10 font-mono text-[11px] tracking-wider">
+              <button
+                type="button"
+                onClick={() => setActiveTab("dossier")}
+                className={`flex-1 py-2.5 text-center font-bold transition-all cursor-pointer uppercase ${
+                  activeTab === "dossier"
+                    ? "bg-brand-accent/10 text-brand-accent border-b-2 border-brand-accent font-black"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-brand-accent/5"
+                }`}
+              >
+                DOSSIER DETAILS
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("comments")}
+                className={`flex-1 py-2.5 text-center font-bold transition-all cursor-pointer uppercase flex items-center justify-center gap-1.5 ${
+                  activeTab === "comments"
+                    ? "bg-brand-accent/10 text-brand-accent border-b-2 border-brand-accent font-black"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-brand-accent/5"
+                }`}
+              >
+                <MessageSquare size={12} />
+                COMMUNICATIONS FEED
+                {comments.length > 0 && (
+                  <span className="bg-brand-accent/25 text-brand-accent px-1.5 py-0.5 rounded-full text-[9px] font-mono">
+                    {comments.length}
+                  </span>
+                )}
+              </button>
+            </div>
 
-              {/* Grid Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Priority Selection */}
+            {/* Body */}
+            {activeTab === "dossier" ? (
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Mission Title Input */}
                 <div className="space-y-1">
                   <label className="tactical-label text-slate-500 text-[10px]">
-                    PRIORITY LEVEL
+                    MISSION DESCRIPTION / TITLE
                   </label>
-                  <div className="grid grid-cols-3 gap-1">
-                    {(["LOW", "MEDIUM", "HIGH"] as Priority[]).map((level) => (
-                      <button
-                        key={level}
-                        type="button"
-                        onClick={() => {
-                          if (localRole !== "viewer") setPriority(level);
-                        }}
-                        disabled={localRole === "viewer"}
-                        className={`py-1.5 text-xs font-bold rounded-xs border transition-all ${
-                          localRole === "viewer" ? "cursor-not-allowed" : "cursor-pointer"
-                        } ${
-                          priority === level
-                            ? level === "HIGH"
-                              ? "bg-brand-destructive border-brand-destructive text-white shadow-xs shadow-brand-destructive/20"
-                              : level === "MEDIUM"
-                              ? "bg-amber-500 border-amber-500 text-slate-900"
-                              : "bg-emerald-500 border-emerald-500 text-slate-900"
-                            : "bg-brand-bg/40 border-brand-accent/10 hover:border-brand-accent/40 text-slate-400"
-                        }`}
-                      >
-                        {level}
-                      </button>
-                    ))}
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    disabled={localRole === "viewer"}
+                    className="w-full bg-brand-bg/60 text-slate-100 text-lg font-bold px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
+                    placeholder="Mission title..."
+                  />
+                </div>
+
+                {/* Grid Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Priority Selection */}
+                  <div className="space-y-1">
+                    <label className="tactical-label text-slate-500 text-[10px]">
+                      PRIORITY LEVEL
+                    </label>
+                    <div className="grid grid-cols-3 gap-1">
+                      {(["LOW", "MEDIUM", "HIGH"] as Priority[]).map((level) => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => {
+                            if (localRole !== "viewer") setPriority(level);
+                          }}
+                          disabled={localRole === "viewer"}
+                          className={`py-1.5 text-xs font-bold rounded-xs border transition-all ${
+                            localRole === "viewer" ? "cursor-not-allowed" : "cursor-pointer"
+                          } ${
+                            priority === level
+                              ? level === "HIGH"
+                                ? "bg-brand-destructive border-brand-destructive text-white shadow-xs shadow-brand-destructive/20"
+                                : level === "MEDIUM"
+                                ? "bg-amber-500 border-amber-500 text-slate-900"
+                                : "bg-emerald-500 border-emerald-500 text-slate-900"
+                              : "bg-brand-bg/40 border-brand-accent/10 hover:border-brand-accent/40 text-slate-400"
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Story Points */}
+                  <div className="space-y-1">
+                    <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
+                      <Hash size={11} /> STORY POINTS
+                    </label>
+                    <input
+                      type="number"
+                      value={storyPoints === null ? "" : storyPoints}
+                      onChange={(e) =>
+                        setStoryPoints(e.target.value === "" ? null : Number(e.target.value))
+                      }
+                      disabled={localRole === "viewer"}
+                      className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
+                      placeholder="e.g. 5"
+                      min="0"
+                    />
+                  </div>
+
+                  {/* Start Date */}
+                  <div className="space-y-1">
+                    <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
+                      <Calendar size={11} /> START DATE & TIME
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      disabled={localRole === "viewer"}
+                      className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Due Date */}
+                  <div className="space-y-1">
+                    <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
+                      <Calendar size={11} /> DUE DATE & TIME
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      disabled={localRole === "viewer"}
+                      className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Custom Tags */}
+                  <div className="space-y-1">
+                    <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
+                      <Tag size={11} /> LABELS / TAGS (COMMA SEPARATED)
+                    </label>
+                    <input
+                      type="text"
+                      value={tagsInput}
+                      onChange={(e) => setTagsInput(e.target.value)}
+                      disabled={localRole === "viewer"}
+                      className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
+                      placeholder="e.g. feature, backend, ui"
+                    />
+                  </div>
+
+                  {/* Assignee */}
+                  <div className="space-y-1">
+                    <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
+                      <User size={11} /> ASSIGNEE
+                    </label>
+                    <input
+                      type="text"
+                      value={assignee}
+                      onChange={(e) => setAssignee(e.target.value)}
+                      disabled={localRole === "viewer"}
+                      className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
+                      placeholder="Assignee name..."
+                    />
                   </div>
                 </div>
 
-                {/* Story Points */}
+                {/* Description */}
                 <div className="space-y-1">
                   <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                    <Hash size={11} /> STORY POINTS
+                    <AlignLeft size={11} /> OPERATION DOSSIER / DESCRIPTION
                   </label>
-                  <input
-                    type="number"
-                    value={storyPoints === null ? "" : storyPoints}
-                    onChange={(e) =>
-                      setStoryPoints(e.target.value === "" ? null : Number(e.target.value))
-                    }
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
                     disabled={localRole === "viewer"}
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
-                    placeholder="e.g. 5"
-                    min="0"
+                    rows={4}
+                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all resize-y disabled:opacity-75 disabled:cursor-not-allowed"
+                    placeholder="Detail the operational details..."
                   />
                 </div>
 
-                {/* Start Date */}
-                <div className="space-y-1">
-                  <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                    <Calendar size={11} /> START DATE & TIME
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    disabled={localRole === "viewer"}
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                {/* Due Date */}
-                <div className="space-y-1">
-                  <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                    <Calendar size={11} /> DUE DATE & TIME
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    disabled={localRole === "viewer"}
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono disabled:opacity-75 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                {/* Custom Tags */}
-                <div className="space-y-1">
-                  <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                    <Tag size={11} /> LABELS / TAGS (COMMA SEPARATED)
-                  </label>
-                  <input
-                    type="text"
-                    value={tagsInput}
-                    onChange={(e) => setTagsInput(e.target.value)}
-                    disabled={localRole === "viewer"}
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
-                    placeholder="e.g. feature, backend, ui"
-                  />
-                </div>
-
-                {/* Assignee */}
-                <div className="space-y-1">
-                  <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                    <User size={11} /> ASSIGNEE
-                  </label>
-                  <input
-                    type="text"
-                    value={assignee}
-                    onChange={(e) => setAssignee(e.target.value)}
-                    disabled={localRole === "viewer"}
-                    className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all disabled:opacity-75 disabled:cursor-not-allowed"
-                    placeholder="Assignee name..."
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-1">
-                <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                  <AlignLeft size={11} /> OPERATION DOSSIER / DESCRIPTION
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={localRole === "viewer"}
-                  rows={4}
-                  className="w-full bg-brand-bg/60 text-slate-100 text-sm px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all resize-y disabled:opacity-75 disabled:cursor-not-allowed"
-                  placeholder="Detail the operational details..."
-                />
-              </div>
-
-              {/* Subtask Checklist */}
-              <div className="space-y-2">
-                <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
-                  <CheckSquare size={11} /> SUBTASK DEPLOYMENTS
-                </label>
-
-                {/* Checklist items */}
+                {/* Subtask Checklist */}
                 <div className="space-y-2">
-                  {subTasks.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="flex items-center justify-between p-2.5 bg-brand-bg/40 border border-brand-accent/10 rounded-xs hover:border-brand-accent/20 transition-all"
-                    >
-                      <label className={`flex items-center gap-3 flex-1 mr-4 ${localRole === "viewer" ? "cursor-default" : "cursor-pointer"}`}>
-                        <input
-                          type="checkbox"
-                          checked={sub.completed}
-                          onChange={() => {
-                            if (localRole !== "viewer") toggleSubTask(sub.id);
-                          }}
-                          disabled={localRole === "viewer"}
-                          className="w-4 h-4 accent-brand-accent cursor-pointer rounded-xs disabled:cursor-not-allowed"
-                        />
-                        <span
-                          className={`text-sm ${
-                            sub.completed ? "line-through text-slate-500" : "text-slate-300"
-                          }`}
-                        >
-                          {sub.title}
-                        </span>
-                      </label>
-                      {localRole !== "viewer" && (
-                        <button
-                          type="button"
-                          onClick={() => deleteSubTask(sub.id)}
-                          className="text-slate-500 hover:text-brand-destructive transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
+                  <label className="tactical-label text-slate-500 text-[10px] flex items-center gap-1">
+                    <CheckSquare size={11} /> SUBTASK DEPLOYMENTS
+                  </label>
+
+                  {/* Checklist items */}
+                  <div className="space-y-2">
+                    {subTasks.map((sub) => (
+                      <div
+                        key={sub.id}
+                        className="flex items-center justify-between p-2.5 bg-brand-bg/40 border border-brand-accent/10 rounded-xs hover:border-brand-accent/20 transition-all"
+                      >
+                        <label className={`flex items-center gap-3 flex-1 mr-4 ${localRole === "viewer" ? "cursor-default" : "cursor-pointer"}`}>
+                          <input
+                            type="checkbox"
+                            checked={sub.completed}
+                            onChange={() => {
+                              if (localRole !== "viewer") toggleSubTask(sub.id);
+                            }}
+                            disabled={localRole === "viewer"}
+                            className="w-4 h-4 accent-brand-accent cursor-pointer rounded-xs disabled:cursor-not-allowed"
+                          />
+                          <span
+                            className={`text-sm ${
+                              sub.completed ? "line-through text-slate-500" : "text-slate-300"
+                            }`}
+                          >
+                            {sub.title}
+                          </span>
+                        </label>
+                        {localRole !== "viewer" && (
+                          <button
+                            type="button"
+                            onClick={() => deleteSubTask(sub.id)}
+                            className="text-slate-500 hover:text-brand-destructive transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Checklist Item Form */}
+                  {localRole !== "viewer" && (
+                    <form onSubmit={handleAddSubTask} className="flex gap-2 mt-2">
+                      <input
+                        type="text"
+                        value={newSubTaskTitle}
+                        onChange={(e) => setNewSubTaskTitle(e.target.value)}
+                        placeholder="Add subtask deployment..."
+                        className="flex-1 bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3 bg-brand-accent/20 hover:bg-brand-accent text-brand-accent hover:text-slate-100 border border-brand-accent/40 rounded-xs transition-all flex items-center justify-center cursor-pointer"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col min-h-0 bg-brand-bg/20">
+                {/* Comments Scroll Container */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-[200px]">
+                  {comments.length === 0 ? (
+                    <div className="border border-dashed border-brand-accent/25 bg-brand-card/30 p-8 rounded-xs text-center font-mono flex flex-col items-center justify-center gap-2">
+                      <MessageSquare className="text-brand-accent/40" size={24} />
+                      <span className="text-[10px] text-slate-500 tracking-widest uppercase">
+                        NO COMMUNICATION LOGS RECORDED ON THIS CHANNEL
+                      </span>
                     </div>
-                  ))}
+                  ) : (
+                    comments.map((comment) => {
+                      const isMe = comment.senderId === localUserId;
+                      const isEditing = editingCommentId === comment.id;
+                      return (
+                        <div
+                          key={comment.id}
+                          className={`flex flex-col max-w-[85%] p-3 rounded-xs border ${
+                            isMe
+                              ? "bg-brand-accent/5 border-brand-accent/30 self-end ml-auto"
+                              : "bg-brand-card/85 border-slate-700/60 self-start mr-auto"
+                          } w-full`}
+                        >
+                          {/* Comment Header info */}
+                          <div className="flex items-center justify-between gap-4 border-b border-brand-accent/10 pb-1.5 mb-2 font-mono text-[9px]">
+                            <div className="flex items-center gap-2">
+                              <span className={`font-bold tracking-wider ${isMe ? "text-brand-accent" : "text-cyan-400"}`}>
+                                {resolveCallsign(comment)}
+                              </span>
+                              {isMe && localRole !== "viewer" && !isEditing && (
+                                <div className="flex items-center gap-1.5 ml-2 border-l border-brand-accent/20 pl-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingCommentId(comment.id);
+                                      setEditingCommentText(comment.content);
+                                    }}
+                                    className="text-slate-400 hover:text-brand-accent transition-colors cursor-pointer uppercase font-bold"
+                                  >
+                                    EDIT
+                                  </button>
+                                  <span className="text-slate-600">/</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteComment(comment.id)}
+                                    className="text-slate-400 hover:text-brand-destructive transition-colors cursor-pointer uppercase font-bold"
+                                  >
+                                    DELETE
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-slate-500">
+                              {formatTime(comment.timestamp)}
+                            </span>
+                          </div>
+                          {/* Comment content / edit form */}
+                          {isEditing ? (
+                            <div className="flex flex-col gap-2 mt-1">
+                              <textarea
+                                value={editingCommentText}
+                                onChange={(e) => setEditingCommentText(e.target.value)}
+                                rows={2}
+                                className="bg-brand-bg/60 text-slate-100 text-xs px-2.5 py-1.5 border border-brand-accent/30 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-sans w-full resize-none"
+                              />
+                              <div className="flex justify-end gap-1.5 text-[9px] font-mono">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingCommentId(null);
+                                    setEditingCommentText("");
+                                  }}
+                                  className="px-2 py-1 bg-slate-700/50 hover:bg-slate-700 border border-slate-600/40 hover:border-slate-500 text-slate-300 rounded-xs transition-colors cursor-pointer uppercase font-bold"
+                                >
+                                  CANCEL
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveEditComment(comment.id)}
+                                  className="px-2 py-1 bg-brand-accent/20 hover:bg-brand-accent text-brand-accent hover:text-white border border-brand-accent/40 rounded-xs transition-colors cursor-pointer uppercase font-bold"
+                                >
+                                  SAVE
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-slate-200 text-sm font-sans whitespace-pre-wrap break-words leading-relaxed select-text">
+                              <CommentContent text={comment.content} />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={commentsEndRef} />
                 </div>
 
-                {/* Add Checklist Item Form */}
-                {localRole !== "viewer" && (
-                  <form onSubmit={handleAddSubTask} className="flex gap-2 mt-2">
-                    <input
-                      type="text"
-                      value={newSubTaskTitle}
-                      onChange={(e) => setNewSubTaskTitle(e.target.value)}
-                      placeholder="Add subtask deployment..."
-                      className="flex-1 bg-brand-bg/60 text-slate-100 text-sm px-3 py-1.5 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all"
-                    />
-                    <button
-                      type="submit"
-                      className="px-3 bg-brand-accent/20 hover:bg-brand-accent text-brand-accent hover:text-slate-100 border border-brand-accent/40 rounded-xs transition-all flex items-center justify-center cursor-pointer"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </form>
-                )}
+                {/* Add Comment Input Form */}
+                <div className="p-4 border-t border-brand-accent/20 bg-brand-card/90">
+                  {localRole !== "viewer" ? (
+                    <form onSubmit={handleAddComment} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newCommentText}
+                        onChange={(e) => setNewCommentText(e.target.value)}
+                        placeholder="ENTER SQUAD REPORT / TRANSMISSION..."
+                        className="flex-1 bg-brand-bg/60 text-slate-100 text-sm px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent transition-all font-mono"
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 bg-brand-accent hover:bg-purple-600 text-white rounded-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer font-mono text-xs font-bold uppercase tracking-wider animate-pulse"
+                      >
+                        <Send size={14} />
+                        SEND
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="text-center font-mono text-[10px] text-brand-destructive bg-brand-destructive/10 border border-brand-destructive/25 py-2 rounded-xs uppercase tracking-widest animate-pulse">
+                      [VIEW-ONLY ACCESS // TRANSMISSION LINK LOCKED]
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Footer Actions */}
             <div className="px-6 py-4 border-t border-brand-accent/20 bg-brand-bg/40 flex items-center justify-between">

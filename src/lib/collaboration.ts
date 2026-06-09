@@ -63,8 +63,8 @@ export function syncYjsToBoardState(yRootMap: Y.Map<any>): BoardState | null {
     if (val instanceof Y.Map) {
       const tagsArr = val.get('tags') as Y.Array<string> | undefined;
       const subTasksArr = val.get('subTasks') as Y.Array<any> | undefined;
-      
       const statusHistoryArr = val.get('statusHistory') as Y.Array<any> | undefined;
+      const commentsArr = val.get('comments') as Y.Array<any> | undefined;
       
       resultCards[key] = {
         id: val.get('id') as string,
@@ -81,6 +81,7 @@ export function syncYjsToBoardState(yRootMap: Y.Map<any>): BoardState | null {
         createdAt: val.get('createdAt') as number,
         assignee: val.get('assignee') as string | null,
         statusHistory: statusHistoryArr ? statusHistoryArr.toArray() : [],
+        comments: commentsArr ? commentsArr.toArray() : [],
       };
     }
   });
@@ -220,6 +221,18 @@ export function syncBoardStateToYjs(state: BoardState, yRootMap: Y.Map<any>, ori
       if (JSON.stringify(currentSubTasks) !== JSON.stringify(card.subTasks)) {
         ySubTasks.delete(0, ySubTasks.length);
         ySubTasks.insert(0, card.subTasks);
+      }
+
+      // Sync comments
+      let yComments = yCard.get('comments') as Y.Array<any> | undefined;
+      if (!yComments) {
+        yComments = new Y.Array<any>();
+        yCard.set('comments', yComments);
+      }
+      const currentComments = yComments.toArray();
+      if (JSON.stringify(currentComments) !== JSON.stringify(card.comments || [])) {
+        yComments.delete(0, yComments.length);
+        yComments.insert(0, card.comments || []);
       }
     });
   }, origin);
