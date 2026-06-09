@@ -2,15 +2,30 @@
 
 import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Check, Paintbrush, Sliders, Image as ImageIcon, RotateCcw, Monitor } from "lucide-react";
-import { useCustomization, presetAccentColors, presetBgImages } from "./CustomizationContext";
+import {
+  X,
+  Check,
+  Paintbrush,
+  Sliders,
+  Image as ImageIcon,
+  RotateCcw,
+  Monitor,
+} from "lucide-react";
+import {
+  useCustomization,
+  presetAccentColors,
+  presetBgImages,
+} from "./CustomizationContext";
 
 interface CustomizationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDrawerProps) {
+export default function CustomizationDrawer({
+  isOpen,
+  onClose,
+}: CustomizationDrawerProps) {
   const {
     theme,
     accentColor,
@@ -28,19 +43,22 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
   } = useCustomization();
 
   const [customUrl, setCustomUrl] = useState(
-    presetBgImages.some(img => img.value === bgImage) ? "" : bgImage
+    presetBgImages.some((img) => img.value === bgImage) ? "" : bgImage,
   );
 
   // Sync local input state with context value
   useEffect(() => {
-    if (presetBgImages.some(img => img.value === bgImage)) {
+    if (presetBgImages.some((img) => img.value === bgImage)) {
       setCustomUrl("");
     } else {
       setCustomUrl(bgImage);
     }
   }, [bgImage]);
 
-  const activePresets = theme === "endfield" ? presetAccentColors.endfield : presetAccentColors.arknights;
+  const activePresets =
+    theme === "endfield"
+      ? presetAccentColors.endfield
+      : presetAccentColors.arknights;
   const currentDefaultAccent = theme === "endfield" ? "#657136" : "#a855f7";
 
   const handleCustomUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +99,7 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
                 <div className="flex items-center gap-2">
                   <Paintbrush className="h-5 w-5 text-brand-accent animate-pulse" />
                   <h2 className="text-sm font-bold tracking-widest uppercase">
-                    VIBE CONFIGURATOR
+                    CUSTOMIZE
                   </h2>
                 </div>
                 <button
@@ -98,7 +116,7 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
                   <Monitor size={12} className="text-brand-accent" />
                   <span>VISUAL THEME MODE</span>
                 </div>
-                
+
                 <div className="flex bg-brand-bg/60 p-0.5 border border-brand-accent/20 rounded-xs">
                   <button
                     type="button"
@@ -139,11 +157,18 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
                     onClick={() => setAccentColor("")}
                     title="Default Theme Accent"
                     className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer relative overflow-hidden ${
-                      accentColor === "" ? "border-white scale-110" : "border-transparent hover:scale-105"
+                      accentColor === ""
+                        ? "border-white scale-110"
+                        : "border-transparent hover:scale-105"
                     }`}
                     style={{ backgroundColor: currentDefaultAccent }}
                   >
-                    {accentColor === "" && <Check size={14} className="text-white drop-shadow-md z-10" />}
+                    {accentColor === "" && (
+                      <Check
+                        size={14}
+                        className="text-white drop-shadow-md z-10"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-black/10 hover:bg-transparent" />
                   </button>
 
@@ -153,12 +178,17 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
                       onClick={() => setAccentColor(preset.value)}
                       title={preset.name}
                       className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer relative ${
-                        accentColor === preset.value ? "border-white scale-110" : "border-transparent hover:scale-105"
+                        accentColor === preset.value
+                          ? "border-white scale-110"
+                          : "border-transparent hover:scale-105"
                       }`}
                       style={{ backgroundColor: preset.value }}
                     >
                       {accentColor === preset.value && (
-                        <Check size={14} className="text-white drop-shadow-md z-10" />
+                        <Check
+                          size={14}
+                          className="text-white drop-shadow-md z-10"
+                        />
                       )}
                     </button>
                   ))}
@@ -183,7 +213,10 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
                         const val = e.target.value;
                         if (val.startsWith("#") && val.length <= 7) {
                           setAccentColor(val);
-                        } else if (val === "" || val.toLowerCase() === "default") {
+                        } else if (
+                          val === "" ||
+                          val.toLowerCase() === "default"
+                        ) {
                           setAccentColor("");
                         }
                       }}
@@ -250,7 +283,9 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
                       min="0"
                       max="100"
                       value={bgOpacity}
-                      onChange={(e) => setBgOpacity(parseInt(e.target.value, 10))}
+                      onChange={(e) =>
+                        setBgOpacity(parseInt(e.target.value, 10))
+                      }
                       className="w-full accent-brand-accent cursor-pointer bg-brand-bg/60 h-1 rounded-lg appearance-none"
                     />
                   </div>
@@ -308,7 +343,7 @@ export default function CustomizationDrawer({ isOpen, onClose }: CustomizationDr
                 <RotateCcw size={13} />
                 RESET CONFIG TO DEFAULT
               </button>
-              
+
               <div className="text-[9px] text-slate-500 leading-normal text-center">
                 VIBE LAYERS PERSISTED CLIENT-SIDE VIA LOCAL STORAGE.
               </div>

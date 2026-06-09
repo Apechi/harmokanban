@@ -1,9 +1,26 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders, BarChart2, Paintbrush, MessageSquare } from "lucide-react";
+import {
+  Plus,
+  LayoutGrid,
+  AlertCircle,
+  RefreshCw,
+  Radio,
+  Calendar,
+  Sliders,
+  BarChart2,
+  Paintbrush,
+  MessageSquare,
+} from "lucide-react";
 import { BoardState, TaskCard, BoardColumn, Project } from "@/types";
-import { loadBoardState, saveBoardState, loadProjectsList, saveProjectsList, DEFAULT_PROJECT_ID } from "@/lib/db";
+import {
+  loadBoardState,
+  saveBoardState,
+  loadProjectsList,
+  saveProjectsList,
+  DEFAULT_PROJECT_ID,
+} from "@/lib/db";
 import Board from "@/components/Board";
 import CardModal from "@/components/CardModal";
 import CollaborateDrawer from "@/components/CollaborateDrawer";
@@ -11,10 +28,17 @@ import { useCollaboration } from "@/hooks/useCollaboration";
 import ChatDrawer from "@/components/ChatDrawer";
 import GanttTimeline from "@/components/GanttTimeline";
 import AutomationConsole from "@/components/AutomationConsole";
-import { runAutomations, DEFAULT_RULES, AutomationRule } from "@/lib/automations";
+import {
+  runAutomations,
+  DEFAULT_RULES,
+  AutomationRule,
+} from "@/lib/automations";
 import ProjectSidebar from "@/components/ProjectSidebar";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
-import { CustomizationProvider, useCustomization } from "@/components/CustomizationContext";
+import {
+  CustomizationProvider,
+  useCustomization,
+} from "@/components/CustomizationContext";
 import CustomizationDrawer from "@/components/CustomizationDrawer";
 
 // Default seed data if IndexedDB is empty
@@ -47,7 +71,8 @@ const DEFAULT_STATE: BoardState = {
       id: "card-welcome",
       columnId: "col-todo",
       title: "Welcome to KanbanHarmo",
-      description: "This is a tactical sci-fi Kanban board designed for rapid startup planning. Double-click or click this card to open details.",
+      description:
+        "This is a tactical sci-fi Kanban board designed for rapid startup planning. Double-click or click this card to open details.",
       priority: "LOW",
       tags: ["tutorial", "board"],
       dueDate: "2026-06-30",
@@ -55,7 +80,11 @@ const DEFAULT_STATE: BoardState = {
       storyPoints: 1,
       subTasks: [
         { id: "sub-1", title: "Read the card description", completed: true },
-        { id: "sub-2", title: "Drag this card to IN PROGRESS", completed: false },
+        {
+          id: "sub-2",
+          title: "Drag this card to IN PROGRESS",
+          completed: false,
+        },
       ],
       code: "OP-101",
       createdAt: Date.now(),
@@ -64,7 +93,8 @@ const DEFAULT_STATE: BoardState = {
       id: "card-persistent",
       columnId: "col-todo",
       title: "Verify IndexedDB Persistence",
-      description: "Any changes you make to columns or cards are automatically stored in the browser's IndexedDB. Try refreshing the page after making a change!",
+      description:
+        "Any changes you make to columns or cards are automatically stored in the browser's IndexedDB. Try refreshing the page after making a change!",
       priority: "MEDIUM",
       tags: ["storage", "offline"],
       dueDate: null,
@@ -81,7 +111,8 @@ const DEFAULT_STATE: BoardState = {
       id: "card-style",
       columnId: "col-progress",
       title: "Implement Arknights Tactical Theme",
-      description: "Achieve premium dark neon aesthetics: deep violet background, corner bracket borders, Share Tech Mono fonts, and graffiti badges.",
+      description:
+        "Achieve premium dark neon aesthetics: deep violet background, corner bracket borders, Share Tech Mono fonts, and graffiti badges.",
       priority: "HIGH",
       tags: ["design", "ui"],
       dueDate: "2026-06-15",
@@ -108,7 +139,9 @@ function initializeStatusHistory(state: BoardState): BoardState {
     if (!card.statusHistory || card.statusHistory.length === 0) {
       updatedCards[cardId] = {
         ...card,
-        statusHistory: [{ columnId: card.columnId, timestamp: card.createdAt || Date.now() }],
+        statusHistory: [
+          { columnId: card.columnId, timestamp: card.createdAt || Date.now() },
+        ],
       };
       changed = true;
     }
@@ -133,7 +166,8 @@ export default function Home() {
 
 function BoardApp() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string>(DEFAULT_PROJECT_ID);
+  const [activeProjectId, setActiveProjectId] =
+    useState<string>(DEFAULT_PROJECT_ID);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [boardState, setBoardState] = useState<BoardState | null>(null);
@@ -141,7 +175,9 @@ function BoardApp() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCollabOpen, setIsCollabOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"kanban" | "gantt" | "analytics">("kanban");
+  const [viewMode, setViewMode] = useState<"kanban" | "gantt" | "analytics">(
+    "kanban",
+  );
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
@@ -216,7 +252,12 @@ function BoardApp() {
 
       // 2. Load board state for active project
       const savedBoard = await loadBoardState(activeProj.id);
-      if (savedBoard && savedBoard.columns && savedBoard.columnOrder && savedBoard.cards) {
+      if (
+        savedBoard &&
+        savedBoard.columns &&
+        savedBoard.columnOrder &&
+        savedBoard.cards
+      ) {
         const initialized = initializeStatusHistory(savedBoard);
         setBoardState(initialized);
         if (JSON.stringify(initialized) !== JSON.stringify(savedBoard)) {
@@ -263,12 +304,21 @@ function BoardApp() {
     const savedBoard = await loadBoardState(id);
     let currentBoard = savedBoard;
 
-    if (!savedBoard || !savedBoard.columns || !savedBoard.columnOrder || !savedBoard.cards) {
+    if (
+      !savedBoard ||
+      !savedBoard.columns ||
+      !savedBoard.columnOrder ||
+      !savedBoard.cards
+    ) {
       // Create clean board state for new project
       const cleanState: BoardState = {
         columns: {
           "col-todo": { id: "col-todo", title: "TODO", cardIds: [] },
-          "col-progress": { id: "col-progress", title: "IN PROGRESS", cardIds: [] },
+          "col-progress": {
+            id: "col-progress",
+            title: "IN PROGRESS",
+            cardIds: [],
+          },
           "col-review": { id: "col-review", title: "REVIEW", cardIds: [] },
           "col-done": { id: "col-done", title: "DONE", cardIds: [] },
         },
@@ -314,7 +364,11 @@ function BoardApp() {
     const cleanState: BoardState = {
       columns: {
         "col-todo": { id: "col-todo", title: "TODO", cardIds: [] },
-        "col-progress": { id: "col-progress", title: "IN PROGRESS", cardIds: [] },
+        "col-progress": {
+          id: "col-progress",
+          title: "IN PROGRESS",
+          cardIds: [],
+        },
         "col-review": { id: "col-review", title: "REVIEW", cardIds: [] },
         "col-done": { id: "col-done", title: "DONE", cardIds: [] },
       },
@@ -329,15 +383,19 @@ function BoardApp() {
 
   // Rename project
   const handleRenameProject = async (id: string, newName: string) => {
-    const updated = projects.map((p) => (p.id === id ? { ...p, name: newName } : p));
+    const updated = projects.map((p) =>
+      p.id === id ? { ...p, name: newName } : p,
+    );
     setProjects(updated);
     await saveProjectsList(updated);
   };
 
   // Archive/delete project
   const handleDeleteProject = async (id: string) => {
-    const updated = projects.map((p) => (p.id === id ? { ...p, archived: true } : p));
-    
+    const updated = projects.map((p) =>
+      p.id === id ? { ...p, archived: true } : p,
+    );
+
     const remaining = updated.filter((p) => !p.archived);
     if (remaining.length === 0) {
       // If no projects remain, automatically create a new default project
@@ -378,7 +436,8 @@ function BoardApp() {
 
   // Periodically execute automations (e.g. for time-based triggers like due dates)
   useEffect(() => {
-    if (!boardState || automationRules.length === 0 || localRole === "viewer") return;
+    if (!boardState || automationRules.length === 0 || localRole === "viewer")
+      return;
 
     // Check once when board state is loaded
     runAutomations(boardState, automationRules, (updatedState) => {
@@ -432,13 +491,15 @@ function BoardApp() {
       Object.keys(updatedCards).forEach((cardId) => {
         const newCard = updatedCards[cardId];
         const oldCard = boardState.cards[cardId];
-        
+
         const currentHistory = newCard.statusHistory || [];
-        
+
         if (!oldCard || currentHistory.length === 0) {
           updatedCards[cardId] = {
             ...newCard,
-            statusHistory: [{ columnId: newCard.columnId, timestamp: Date.now() }],
+            statusHistory: [
+              { columnId: newCard.columnId, timestamp: Date.now() },
+            ],
           };
           changed = true;
         } else if (newCard.columnId !== oldCard.columnId) {
@@ -446,7 +507,10 @@ function BoardApp() {
           if (!lastTransition || lastTransition.columnId !== newCard.columnId) {
             updatedCards[cardId] = {
               ...newCard,
-              statusHistory: [...currentHistory, { columnId: newCard.columnId, timestamp: Date.now() }],
+              statusHistory: [
+                ...currentHistory,
+                { columnId: newCard.columnId, timestamp: Date.now() },
+              ],
             };
             changed = true;
           }
@@ -607,7 +671,9 @@ function BoardApp() {
       delete updatedCards[id];
     });
 
-    const updatedColumnOrder = boardState.columnOrder.filter((id) => id !== columnId);
+    const updatedColumnOrder = boardState.columnOrder.filter(
+      (id) => id !== columnId,
+    );
 
     updateBoardState({
       ...boardState,
@@ -618,22 +684,27 @@ function BoardApp() {
   };
 
   // Calculate remote viewers map
-  const activeCardViewers = peers.reduce((acc, peer) => {
-    if (peer.activeCardId) {
-      if (!acc[peer.activeCardId]) {
-        acc[peer.activeCardId] = [];
+  const activeCardViewers = peers.reduce(
+    (acc, peer) => {
+      if (peer.activeCardId) {
+        if (!acc[peer.activeCardId]) {
+          acc[peer.activeCardId] = [];
+        }
+        acc[peer.activeCardId].push(peer.name);
       }
-      acc[peer.activeCardId].push(peer.name);
-    }
-    return acc;
-  }, {} as { [cardId: string]: string[] });
+      return acc;
+    },
+    {} as { [cardId: string]: string[] },
+  );
 
   if (!boardState) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-brand-bg text-slate-100 font-mono">
         <div className="flex flex-col items-center gap-3">
           <RefreshCw className="animate-spin text-brand-accent" size={32} />
-          <span className="text-sm tracking-widest uppercase">INITIALIZING TACTICAL DATA LINKS...</span>
+          <span className="text-sm tracking-widest uppercase">
+            INITIALIZING TACTICAL DATA LINKS...
+          </span>
         </div>
       </div>
     );
@@ -642,11 +713,11 @@ function BoardApp() {
   return (
     <div className="flex flex-col flex-1">
       {/* Background Overlays */}
-      <div 
-        className="tactical-bg-overlay" 
-        style={{ 
+      <div
+        className="tactical-bg-overlay"
+        style={{
           backgroundImage: sanitizeBgUrl(bgImage),
-          opacity: bgOpacity / 100
+          opacity: bgOpacity / 100,
         }}
       />
       {showGrid && <div className="tactical-grid-overlay" />}
@@ -666,7 +737,11 @@ function BoardApp() {
               </span>
             </h1>
             <p className="text-[10px] text-slate-400 font-mono tracking-widest uppercase mt-0.5">
-              STATUS: {isConnected ? `CONNECTED TO [${roomId}]` : "LOCAL DATABASE ACTIVE"} // TARGETS PERSISTED
+              STATUS:{" "}
+              {isConnected
+                ? `CONNECTED TO [${roomId}]`
+                : "LOCAL DATABASE ACTIVE"}{" "}
+              // TARGETS PERSISTED
             </p>
           </div>
         </div>
@@ -732,7 +807,7 @@ function BoardApp() {
             title="Configure Theme & Backgrounds"
           >
             <Paintbrush size={14} />
-            CUSTOMIZE VIBE
+            CUSTOMIZE THEME
           </button>
 
           {/* Collaborate Button */}
@@ -841,7 +916,7 @@ function BoardApp() {
         onSave={handleSaveCard}
         onDelete={handleDeleteCard}
         localRole={localRole}
-        viewers={activeCard ? (activeCardViewers[activeCard.id] || []) : []}
+        viewers={activeCard ? activeCardViewers[activeCard.id] || [] : []}
       />
 
       {/* Collaborate side drawer overlay */}
@@ -893,4 +968,3 @@ function BoardApp() {
     </div>
   );
 }
-
