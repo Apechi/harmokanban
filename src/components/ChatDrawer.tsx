@@ -49,7 +49,7 @@ function MessageContent({ text }: { text: string }) {
               href={part}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-brand-accent hover:underline break-all inline-flex items-center gap-0.5"
+              className="text-brand-accent underline break-all inline-flex items-center gap-0.5"
             >
               {part}
             </a>
