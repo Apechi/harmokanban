@@ -61,6 +61,7 @@ export function useCollaboration(
   const providerRef = useRef<WebrtcProvider | null>(null);
   const persistenceRef = useRef<IndexeddbPersistence | null>(null);
   const isSyncingFromYjsRef = useRef(false);
+  const ownerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync callsign to localStorage if generated
   useEffect(() => {
@@ -181,20 +182,32 @@ export function useCollaboration(
 
     // Determine initial owner and roles
     const setupRoomOwnershipAndRoles = () => {
-      // 1. Set owner if not present (P2P first joiner is owner)
-      if (!yMetaMap.has("ownerId")) {
-        yMetaMap.set("ownerId", localUserId);
-      }
-      
-      const currentOwnerId = yMetaMap.get("ownerId") as string;
-      setOwnerId(currentOwnerId);
-
-      // 2. Determine local role
-      if (localUserId === currentOwnerId) {
-        setLocalRole("editor");
+      const currentOwnerId = yMetaMap.get("ownerId") as string | undefined;
+      if (currentOwnerId) {
+        setOwnerId(currentOwnerId);
+        if (localUserId === currentOwnerId) {
+          setLocalRole("editor");
+        } else {
+          const assignedRole = yRolesMap.get(localUserId) as "editor" | "viewer" | undefined;
+          setLocalRole(assignedRole || "viewer");
+        }
       } else {
-        const assignedRole = yRolesMap.get(localUserId) as "editor" | "viewer" | undefined;
-        setLocalRole(assignedRole || "viewer");
+        // No owner found in local persistence/state.
+        // Wait to see if we sync with an existing owner over the network.
+        if (ownerTimerRef.current) {
+          clearTimeout(ownerTimerRef.current);
+        }
+        ownerTimerRef.current = setTimeout(() => {
+          if (!ydocRef.current) return;
+          const currentMeta = ydocRef.current.getMap("room-metadata");
+          if (!currentMeta.has("ownerId")) {
+            console.log("[Collab] No existing owner detected after delay. Claiming ownership.");
+            currentMeta.set("ownerId", localUserId);
+            setOwnerId(localUserId);
+            setLocalRole("editor");
+          }
+          ownerTimerRef.current = null;
+        }, 1500);
       }
     };
 
@@ -202,6 +215,10 @@ export function useCollaboration(
     yMetaMap.observe(() => {
       const currentOwnerId = yMetaMap.get("ownerId") as string | undefined;
       if (currentOwnerId) {
+        if (ownerTimerRef.current) {
+          clearTimeout(ownerTimerRef.current);
+          ownerTimerRef.current = null;
+        }
         setOwnerId(currentOwnerId);
         if (localUserId === currentOwnerId) {
           setLocalRole("editor");
@@ -283,6 +300,10 @@ export function useCollaboration(
 
   // Disconnect from the current collaborative room
   const disconnectFromRoom = () => {
+    if (ownerTimerRef.current) {
+      clearTimeout(ownerTimerRef.current);
+      ownerTimerRef.current = null;
+    }
     if (providerRef.current) {
       providerRef.current.destroy();
       providerRef.current = null;
