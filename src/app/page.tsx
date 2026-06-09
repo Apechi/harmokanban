@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders, BarChart2, Paintbrush } from "lucide-react";
+import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders, BarChart2, Paintbrush, MessageSquare } from "lucide-react";
 import { BoardState, TaskCard, BoardColumn, Project } from "@/types";
 import { loadBoardState, saveBoardState, loadProjectsList, saveProjectsList, DEFAULT_PROJECT_ID } from "@/lib/db";
 import Board from "@/components/Board";
 import CardModal from "@/components/CardModal";
 import CollaborateDrawer from "@/components/CollaborateDrawer";
 import { useCollaboration } from "@/hooks/useCollaboration";
+import ChatDrawer from "@/components/ChatDrawer";
 import GanttTimeline from "@/components/GanttTimeline";
 import AutomationConsole from "@/components/AutomationConsole";
 import { runAutomations, DEFAULT_RULES, AutomationRule } from "@/lib/automations";
@@ -144,6 +145,8 @@ function BoardApp() {
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const { bgOpacity, showGrid, showScanlines, bgImage } = useCustomization();
 
@@ -153,6 +156,7 @@ function BoardApp() {
     isConnected,
     peerCount,
     peers,
+    chatMessages,
     localCallsign,
     localUserId,
     isOwner,
@@ -165,7 +169,26 @@ function BoardApp() {
     setEditingCard,
     updateCursor,
     broadcastBoardState,
+    sendChatMessage,
   } = useCollaboration(boardState, setBoardState);
+
+  // Track unread messages count
+  const chatMessagesLengthRef = useRef(0);
+  useEffect(() => {
+    if (isChatOpen) {
+      setUnreadCount(0);
+    } else {
+      const prevLen = chatMessagesLengthRef.current;
+      const newLen = chatMessages.length;
+      if (newLen > prevLen) {
+        const latestMsg = chatMessages[newLen - 1];
+        if (latestMsg && latestMsg.senderId !== localUserId) {
+          setUnreadCount((c) => c + (newLen - prevLen));
+        }
+      }
+    }
+    chatMessagesLengthRef.current = chatMessages.length;
+  }, [chatMessages, isChatOpen, localUserId]);
 
   // Initialize projects and active board state
   useEffect(() => {
@@ -725,6 +748,32 @@ function BoardApp() {
             {isConnected ? `SQUAD LINKED (${peerCount + 1})` : "COLLABORATE"}
           </button>
 
+          {/* Chat Button */}
+          {isConnected && (
+            <button
+              onClick={() => {
+                setIsChatOpen(!isChatOpen);
+                if (!isChatOpen) setUnreadCount(0);
+              }}
+              className={`relative px-4 py-2 border rounded-xs text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                isChatOpen
+                  ? "bg-brand-accent text-white border-brand-accent"
+                  : "border-brand-accent/50 bg-brand-accent/5 hover:bg-brand-accent/15 text-brand-accent"
+              }`}
+            >
+              <MessageSquare size={14} />
+              <span>CHAT</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-brand-destructive text-[8px] font-bold items-center justify-center text-white font-mono">
+                    {unreadCount}
+                  </span>
+                </span>
+              )}
+            </button>
+          )}
+
           <button
             onClick={handleAddColumn}
             className="px-4 py-2 border border-brand-accent hover:border-brand-accent/80 bg-brand-accent/10 hover:bg-brand-accent/20 text-slate-100 rounded-xs text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
@@ -829,6 +878,17 @@ function BoardApp() {
       <CustomizationDrawer
         isOpen={isCustomizationOpen}
         onClose={() => setIsCustomizationOpen(false)}
+      />
+
+      {/* Chat Drawer Overlay */}
+      <ChatDrawer
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        roomId={roomId}
+        isConnected={isConnected}
+        chatMessages={chatMessages}
+        localUserId={localUserId}
+        sendChatMessage={sendChatMessage}
       />
     </div>
   );

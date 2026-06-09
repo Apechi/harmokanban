@@ -176,8 +176,8 @@ Plans:
 
 **Plans:**
 
-- [ ] 08-01: Update collaboration store/provider to introduce Yjs shared array structure for chat messages.
-- [ ] 08-02: Build the Room Chat Drawer UI with a monospace, tactical grid styling.
+- [x] 08-01: Update collaboration store/provider to introduce Yjs shared array structure for chat messages.
+- [x] 08-02: Build the Room Chat Drawer UI with a monospace, tactical grid styling.
 
 #### Phase 9: Card-level Discussion & Comment Threads
 
@@ -213,5 +213,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Collaborative Presence & Role Controls | v2.0 | 1/1 | Complete | 2026-06-09 |
 | 6. Analytics & Performance Dashboard | v3.0 | 4/4 | Complete | 2026-06-09 |
 | 7. Theme Switcher & Styling Customization | v4.0 | 3/3 | Complete | 2026-06-09 |
-| 8. Room-level Real-time Chat | v5.0 | 0/2 | Planned | |
+| 8. Room-level Real-time Chat | v5.0 | 2/2 | Complete | 2026-06-09 |
 | 9. Card-level Discussion & Comment Threads | v5.0 | 0/2 | Planned | |

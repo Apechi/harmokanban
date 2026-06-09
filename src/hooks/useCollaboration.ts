@@ -22,6 +22,15 @@ export interface PeerInfo {
   cursor: { x: number; y: number } | null;
 }
 
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timestamp: number;
+  isSystem?: boolean;
+}
+
 function getRandomMaxConns() {
   return 20 + Math.floor(Math.random() * 15);
 }
@@ -34,6 +43,7 @@ export function useCollaboration(
   const [isConnected, setIsConnected] = useState(false);
   const [peerCount, setPeerCount] = useState(0);
   const [peers, setPeers] = useState<PeerInfo[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [localCallsign, setLocalCallsign] = useState<string>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("squad-operator-callsign") || getRandomOperatorCallsign();
@@ -62,6 +72,7 @@ export function useCollaboration(
   const persistenceRef = useRef<IndexeddbPersistence | null>(null);
   const isSyncingFromYjsRef = useRef(false);
   const ownerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevPeersRef = useRef<PeerInfo[]>([]);
 
   // Sync callsign to localStorage if generated
   useEffect(() => {
@@ -138,10 +149,19 @@ export function useCollaboration(
     const yRootMap = doc.getMap("board-root");
     const yMetaMap = doc.getMap("room-metadata");
     const yRolesMap = doc.getMap("room-roles");
+    const yChatArray = doc.getArray<ChatMessage>("chat-messages");
 
     // 1. Setup offline persistence for the room document
     const persistence = new IndexeddbPersistence(cleanRoomCode, doc);
     persistenceRef.current = persistence;
+
+    // Observe changes on chat messages array
+    const handleChatMessagesChange = () => {
+      setChatMessages(yChatArray.toArray());
+    };
+    yChatArray.observe(handleChatMessagesChange);
+    // Initial load
+    setChatMessages(yChatArray.toArray());
 
     // 2. Setup WebRTC Provider
     const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
@@ -254,6 +274,36 @@ export function useCollaboration(
           });
         }
       });
+
+      // Handle peer departures (write system logs)
+      const currentOwnerId = yMetaMap.get("ownerId") as string | undefined;
+      const amIOwner = localUserId === currentOwnerId;
+      const departedPeers = prevPeersRef.current.filter(
+        (prev) => !newPeers.some((curr) => curr.userId === prev.userId)
+      );
+
+      if (departedPeers.length > 0 && amIOwner) {
+        const chatArray = doc.getArray<ChatMessage>("chat-messages");
+        doc.transact(() => {
+          departedPeers.forEach((peer) => {
+            chatArray.push([
+              {
+                id: crypto.randomUUID(),
+                senderId: "system",
+                senderName: "SYSTEM",
+                text: `${peer.name} LEFT THE CHANNEL`,
+                timestamp: Date.now(),
+                isSystem: true,
+              },
+            ]);
+          });
+          if (chatArray.length > 100) {
+            chatArray.delete(0, chatArray.length - 100);
+          }
+        });
+      }
+
+      prevPeersRef.current = newPeers;
       setPeers(newPeers);
       setPeerCount(newPeers.length);
     };
@@ -281,6 +331,24 @@ export function useCollaboration(
           await saveBoardState(syncedState, cleanRoomCode);
         }
       }
+
+      // Add a system event for join sync
+      const chatArray = doc.getArray<ChatMessage>("chat-messages");
+      doc.transact(() => {
+        chatArray.push([
+          {
+            id: crypto.randomUUID(),
+            senderId: "system",
+            senderName: "SYSTEM",
+            text: `${localCallsign || "Operator"} JOINED THE CHANNEL`,
+            timestamp: Date.now(),
+            isSystem: true,
+          },
+        ]);
+        if (chatArray.length > 100) {
+          chatArray.delete(0, chatArray.length - 100);
+        }
+      });
     });
 
     // Observe changes from Yjs Map to update react state
@@ -321,8 +389,10 @@ export function useCollaboration(
     setIsConnected(false);
     setPeerCount(0);
     setPeers([]);
+    setChatMessages([]);
     setOwnerId(null);
     setLocalRole("editor");
+    prevPeersRef.current = [];
   };
 
   // Broadcast card editing presence info
@@ -351,11 +421,31 @@ export function useCollaboration(
     };
   }, []);
 
+  // Send chat message
+  const sendChatMessage = (text: string) => {
+    if (!ydocRef.current || !roomId) return;
+    const yChatArray = ydocRef.current.getArray<ChatMessage>("chat-messages");
+    const newMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      senderId: localUserId,
+      senderName: localCallsign || "Operator",
+      text: text.trim(),
+      timestamp: Date.now(),
+    };
+    ydocRef.current.transact(() => {
+      yChatArray.push([newMessage]);
+      if (yChatArray.length > 100) {
+        yChatArray.delete(0, yChatArray.length - 100);
+      }
+    });
+  };
+
   return {
     roomId,
     isConnected,
     peerCount,
     peers,
+    chatMessages,
     localCallsign,
     localUserId,
     ownerId,
@@ -369,5 +459,6 @@ export function useCollaboration(
     setEditingCard,
     updateCursor,
     broadcastBoardState,
+    sendChatMessage,
   };
 }
