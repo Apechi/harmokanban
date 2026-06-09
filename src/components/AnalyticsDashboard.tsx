@@ -244,7 +244,7 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
       {/* Tooltip Overlay */}
       {hoveredData && (
         <div
-          className="absolute z-50 bg-[#0e071a]/95 border border-brand-accent p-2.5 rounded-xs text-[11px] text-slate-200 pointer-events-none shadow-lg shadow-brand-accent/15 max-w-[200px] font-mono backdrop-blur-md"
+          className="absolute z-50 bg-brand-card/95 border border-brand-accent p-2.5 rounded-xs text-[11px] text-slate-200 pointer-events-none shadow-lg shadow-brand-accent/15 max-w-[200px] font-mono backdrop-blur-md"
           style={{ left: `${hoveredData.x}px`, top: `${hoveredData.y}px` }}
         >
           <div className="text-[10px] text-brand-accent font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
@@ -269,7 +269,7 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
             <span className="text-[10px] text-slate-400 tracking-widest uppercase block">
               ACTIVE OPERATIONS
             </span>
-            <span className="text-3xl font-bold tracking-tight text-white block mt-1">
+            <span className="text-3xl font-bold tracking-tight text-slate-100 block mt-1">
               {activeCards}
             </span>
           </div>
@@ -305,7 +305,7 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
             <span className="text-[10px] text-slate-400 tracking-widest uppercase block">
               WEEKLY VELOCITY
             </span>
-            <span className="text-3xl font-bold tracking-tight text-white block mt-1">
+            <span className="text-3xl font-bold tracking-tight text-slate-100 block mt-1">
               {currentVelocity}
             </span>
           </div>
@@ -323,7 +323,7 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
             <span className="text-[10px] text-slate-400 tracking-widest uppercase block">
               LEAD / CYCLE TIME
             </span>
-            <span className="text-xl font-bold tracking-tight text-white block mt-2">
+            <span className="text-xl font-bold tracking-tight text-slate-100 block mt-2">
               {avgLeadTimeDays.toFixed(1)}d <span className="text-slate-500 text-xs font-normal">/</span> {avgCycleTimeDays.toFixed(1)}d
             </span>
           </div>
@@ -369,8 +369,8 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                 >
                   <defs>
                     <linearGradient id="actualGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#a855f7" stopOpacity="0.25"/>
-                      <stop offset="100%" stopColor="#a855f7" stopOpacity="0.0"/>
+                      <stop offset="0%" stopColor="var(--brand-accent)" stopOpacity="0.25"/>
+                      <stop offset="100%" stopColor="var(--brand-accent)" stopOpacity="0.0"/>
                     </linearGradient>
                   </defs>
 
@@ -384,7 +384,8 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                         y1={y}
                         x2={chartWidth - chartPadding}
                         y2={y}
-                        stroke="rgba(168, 85, 247, 0.08)"
+                        stroke="var(--brand-accent)"
+                        strokeOpacity="0.12"
                         strokeDasharray="2 2"
                       />
                     );
@@ -457,7 +458,7 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                     return (
                       <polyline
                         fill="none"
-                        stroke="#a855f7"
+                        stroke="var(--brand-accent)"
                         strokeWidth="2.5"
                         points={points.join(" ")}
                       />
@@ -482,10 +483,10 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                           cx={x}
                           cy={y}
                           r="4"
-                          fill="#a855f7"
-                          stroke="#130a21"
+                          fill="var(--brand-accent)"
+                          stroke="var(--brand-card)"
                           strokeWidth="1.5"
-                          className="hover:scale-150 transition-all duration-100 cursor-pointer origin-center"
+                          className="hover:fill-white transition-colors duration-100 cursor-pointer"
                           onMouseMove={(e) => {
                             const rect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
                             setHoveredData({
@@ -552,8 +553,8 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                 >
                   <defs>
                     <linearGradient id="barGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#a855f7" stopOpacity="0.4"/>
-                      <stop offset="100%" stopColor="#a855f7" stopOpacity="0.1"/>
+                      <stop offset="0%" stopColor="var(--brand-accent)" stopOpacity="0.4"/>
+                      <stop offset="100%" stopColor="var(--brand-accent)" stopOpacity="0.1"/>
                     </linearGradient>
                   </defs>
 
@@ -567,7 +568,8 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                         y1={y}
                         x2={chartWidth - chartPadding}
                         y2={y}
-                        stroke="rgba(168, 85, 247, 0.08)"
+                        stroke="var(--brand-accent)"
+                        strokeOpacity="0.12"
                         strokeDasharray="2 2"
                       />
                     );
@@ -591,9 +593,9 @@ export default function AnalyticsDashboard({ state }: AnalyticsDashboardProps) {
                           width={barWidth}
                           height={Math.max(barHeight, 2)}
                           fill="url(#barGlow)"
-                          stroke="#a855f7"
+                          stroke="var(--brand-accent)"
                           strokeWidth="1.5"
-                          className="hover:fill-brand-accent/30 transition-all duration-100 cursor-pointer"
+                          className="hover:opacity-80 transition-opacity duration-100 cursor-pointer"
                           onMouseMove={(e) => {
                             const rect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
                             setHoveredData({

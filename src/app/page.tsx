@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders, BarChart2 } from "lucide-react";
+import { Plus, LayoutGrid, AlertCircle, RefreshCw, Radio, Calendar, Sliders, BarChart2, Paintbrush } from "lucide-react";
 import { BoardState, TaskCard, BoardColumn, Project } from "@/types";
 import { loadBoardState, saveBoardState, loadProjectsList, saveProjectsList, DEFAULT_PROJECT_ID } from "@/lib/db";
 import Board from "@/components/Board";
@@ -13,6 +13,8 @@ import AutomationConsole from "@/components/AutomationConsole";
 import { runAutomations, DEFAULT_RULES, AutomationRule } from "@/lib/automations";
 import ProjectSidebar from "@/components/ProjectSidebar";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
+import { CustomizationProvider, useCustomization } from "@/components/CustomizationContext";
+import CustomizationDrawer from "@/components/CustomizationDrawer";
 
 // Default seed data if IndexedDB is empty
 const DEFAULT_STATE: BoardState = {
@@ -114,6 +116,14 @@ function initializeStatusHistory(state: BoardState): BoardState {
 }
 
 export default function Home() {
+  return (
+    <CustomizationProvider>
+      <BoardApp />
+    </CustomizationProvider>
+  );
+}
+
+function BoardApp() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>(DEFAULT_PROJECT_ID);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -126,6 +136,9 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<"kanban" | "gantt" | "analytics">("kanban");
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+  const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
+
+  const { bgOpacity, showGrid, showScanlines, bgImage } = useCustomization();
 
   // Initialize collaboration hook
   const {
@@ -598,6 +611,17 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1">
+      {/* Background Overlays */}
+      <div 
+        className="tactical-bg-overlay" 
+        style={{ 
+          backgroundImage: bgImage !== "none" ? `url("${bgImage}")` : "none",
+          opacity: bgOpacity / 100
+        }}
+      />
+      {showGrid && <div className="tactical-grid-overlay" />}
+      {showScanlines && <div className="tactical-scanlines" />}
+
       {/* Top Banner Navigation */}
       <header className="border-b border-brand-accent/25 bg-brand-card/90 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 backdrop-blur-md sticky top-0 z-40">
         <div className="flex items-center gap-3">
@@ -671,6 +695,16 @@ export default function Home() {
             AUTOMATIONS
           </button>
 
+          {/* Customization Button */}
+          <button
+            onClick={() => setIsCustomizationOpen(true)}
+            className="px-4 py-2 border border-brand-accent/50 bg-brand-accent/5 hover:bg-brand-accent/15 text-brand-accent rounded-xs text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer"
+            title="Configure Theme & Backgrounds"
+          >
+            <Paintbrush size={14} />
+            CUSTOMIZE VIBE
+          </button>
+
           {/* Collaborate Button */}
           <button
             onClick={() => setIsCollabOpen(true)}
@@ -708,7 +742,7 @@ export default function Home() {
         />
 
         {/* Main Kanban Workspace Container */}
-        <main className="flex-1 bg-brand-bg relative overflow-hidden flex flex-col">
+        <main className="flex-1 bg-transparent relative overflow-hidden flex flex-col">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(168,85,247,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(168,85,247,0.02)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
           {viewMode === "kanban" ? (
@@ -782,6 +816,12 @@ export default function Home() {
         state={boardState}
         rules={automationRules}
         onRulesChange={handleRulesChange}
+      />
+
+      {/* Customization Settings Drawer */}
+      <CustomizationDrawer
+        isOpen={isCustomizationOpen}
+        onClose={() => setIsCustomizationOpen(false)}
       />
     </div>
   );

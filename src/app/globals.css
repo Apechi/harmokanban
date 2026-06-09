@@ -1,18 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-bg: #0a0512;
-  --color-brand-card: #130a21;
-  --color-brand-accent: #a855f7;
-  --color-brand-destructive: #f43f5e;
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-card: var(--brand-card);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-destructive: var(--brand-destructive);
   
   --font-sans: var(--font-sans), ui-sans-serif, system-ui;
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular;
 }
 
 :root {
+  --brand-bg: #0a0512;
+  --brand-card: #130a21;
+  --brand-accent: #a855f7;
+  --brand-destructive: #f43f5e;
+  
   --background: #0a0512;
   --foreground: #f8fafc;
+  
+  --brand-card-bg: rgba(19, 10, 33, 0.85);
+}
+
+.theme-endfield {
+  --brand-bg: #f4f1e9; /* Soft sand background */
+  --brand-card: #e7e2d4; /* Slightly darker sand for cards */
+  --brand-accent: #55622b; /* Slightly darker olive green for better contrast in light mode */
+  --brand-destructive: #b91c1c;
+  
+  --background: #f4f1e9;
+  --foreground: #1c1e20; /* High-readability dark charcoal */
+
+  /* Inverted slate scale for light mode to match layout elements, but with higher contrast */
+  --color-slate-50: #0d0e10;
+  --color-slate-100: #1b1c1e;
+  --color-slate-200: #2a2c2f;
+  --color-slate-300: #3d4044;
+  --color-slate-400: #55595e; /* Stronger contrast for metadata & descriptions */
+  --color-slate-500: #71777d;
+  --color-slate-600: #939aa1;
+  --color-slate-700: #b5bdc4;
+  --color-slate-800: #d8dee3;
+  --color-slate-900: #f4f1e9;
+  --color-slate-950: #fafaf9;
+
+  --brand-card-bg: rgba(231, 226, 212, 0.85);
 }
 
 body {
@@ -24,15 +56,15 @@ body {
 
 .tacticool-card {
   position: relative;
-  border: 1px solid rgba(168, 85, 247, 0.2);
-  background: rgba(19, 10, 33, 0.85);
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.05);
+  border: 1px solid color-mix(in srgb, var(--brand-accent) 20%, transparent);
+  background: var(--brand-card-bg);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--brand-accent) 5%, transparent);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tacticool-card:hover {
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
-  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--brand-accent) 25%, transparent);
+  border-color: color-mix(in srgb, var(--brand-accent) 60%, transparent);
   transform: translateY(-2px);
 }
 
@@ -43,7 +75,7 @@ body {
   position: absolute;
   width: 8px;
   height: 8px;
-  border-color: #a855f7;
+  border-color: var(--brand-accent);
   border-style: solid;
   pointer-events: none;
   transition: all 0.25s ease;
@@ -80,16 +112,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0512;
+  background: var(--brand-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.3);
+  background: color-mix(in srgb, var(--brand-accent) 30%, transparent);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.6);
+  background: color-mix(in srgb, var(--brand-accent) 60%, transparent);
 }
 
 /* Monospace stats label */
@@ -112,13 +144,51 @@ body {
 .tactical-bg-overlay {
   position: fixed;
   inset: 0;
-  background-image: url('/bg.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.04; /* Very subtle texture to preserve high readability and dark contrast */
   pointer-events: none;
-  z-index: 5; /* Overlays the main layout grid and columns but sits behind headers, sidebars, and modals */
+  z-index: -3; /* Behind main workspace content, but in front of body background */
+  transition: opacity 0.3s ease;
+}
+
+/* Custom background grid overlay */
+.tactical-grid-overlay {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(168, 85, 247, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: -2; /* Behind main workspace but in front of background image */
+}
+
+.theme-endfield .tactical-grid-overlay {
+  background-image: 
+    linear-gradient(to right, rgba(126, 128, 124, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(126, 128, 124, 0.12) 1px, transparent 1px);
+}
+
+/* Scanlines styling */
+.tactical-scanlines {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.12) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: -1; /* Behind main workspace but in front of grid overlay */
+}
+
+.theme-endfield .tactical-scanlines {
+  background: linear-gradient(
+    rgba(255, 255, 255, 0) 50%, 
+    rgba(126, 128, 124, 0.08) 50%
+  );
+  background-size: 100% 4px;
 }
 
 

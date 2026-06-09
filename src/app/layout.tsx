@@ -28,8 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${shareTechMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#0a0512] text-slate-100 flex flex-col font-sans">
-        <div className="tactical-bg-overlay" />
+      <body className="min-h-full bg-brand-bg text-foreground flex flex-col font-sans transition-colors duration-300">
         {children}
       </body>
     </html>
