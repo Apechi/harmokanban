@@ -189,6 +189,16 @@ function BoardApp() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Keep activeCard synchronized with boardState changes (e.g. updates from remote peers)
+  useEffect(() => {
+    if (activeCard && boardState) {
+      const currentCard = boardState.cards[activeCard.id];
+      if (currentCard && JSON.stringify(currentCard) !== JSON.stringify(activeCard)) {
+        setActiveCard(currentCard);
+      }
+    }
+  }, [boardState, activeCard]);
+
   const { bgOpacity, showGrid, showScanlines, bgImage } = useCustomization();
 
   // Initialize collaboration hook
