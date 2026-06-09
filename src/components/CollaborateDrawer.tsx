@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { 
-  X, Copy, Check, Users, ShieldAlert, RefreshCw, LogOut, Radio, UserPlus, Crown
+  X, Copy, Check, Users, ShieldAlert, RefreshCw, LogOut, Radio, UserPlus, Crown, Lock, Unlock
 } from "lucide-react";
 import { getRandomOperatorCallsign } from "@/lib/collaboration";
 
@@ -19,6 +19,7 @@ interface CollaborateDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   roomId: string | null;
+  roomPassword: string | null;
   isConnected: boolean;
   peerCount: number;
   peers: PeerInfo[];
@@ -29,7 +30,7 @@ interface CollaborateDrawerProps {
   onUpdateCallsign: (newCallsign: string) => void;
   onUpdateRole: (role: "editor" | "viewer") => void;
   onChangePeerRole: (peerUserId: string, role: "editor" | "viewer") => void;
-  onConnect: (roomId: string) => void;
+  onConnect: (roomId: string, password?: string) => void;
   onDisconnect: () => void;
 }
 
@@ -37,6 +38,7 @@ export default function CollaborateDrawer({
   isOpen,
   onClose,
   roomId,
+  roomPassword,
   isConnected,
   peerCount,
   peers,
@@ -51,13 +53,17 @@ export default function CollaborateDrawer({
   onDisconnect,
 }: CollaborateDrawerProps) {
   const [joinCode, setJoinCode] = useState("");
+  const [joinPassword, setJoinPassword] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [callsignInput, setCallsignInput] = useState(localCallsign);
   const [isEditingCallsign, setIsEditingCallsign] = useState(false);
 
   const handleCopyLink = () => {
     if (!roomId) return;
-    const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+    let inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+    if (roomPassword) {
+      inviteUrl += `#pass=${encodeURIComponent(roomPassword)}`;
+    }
     navigator.clipboard.writeText(inviteUrl);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
@@ -68,13 +74,22 @@ export default function CollaborateDrawer({
     const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
     const number = Math.floor(100 + Math.random() * 900);
     setJoinCode(`${prefix}-${number}`);
+    
+    // Generate an 8-character secure key
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let randomKey = "";
+    for (let i = 0; i < 8; i++) {
+      randomKey += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setJoinPassword(randomKey);
   };
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     if (joinCode.trim()) {
-      onConnect(joinCode.trim());
+      onConnect(joinCode.trim(), joinPassword.trim() || undefined);
       setJoinCode("");
+      setJoinPassword("");
     }
   };
 
@@ -147,9 +162,21 @@ export default function CollaborateDrawer({
                       <div className="text-[10px] text-slate-500 uppercase tracking-wider">
                         ACTIVE NETWORK ROOM
                       </div>
-                      <div className="text-md font-bold text-slate-200 tracking-wider">
+                      <div className="text-md font-bold text-slate-200 tracking-wider mb-2">
                         {roomId}
                       </div>
+                      
+                      {roomPassword ? (
+                        <div className="inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/35 text-emerald-400 px-2 py-0.5 rounded-xs text-[9px] font-bold uppercase tracking-wider">
+                          <Lock size={10} className="shrink-0" />
+                          <span>E2E ENCRYPTED</span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/35 text-amber-500 px-2 py-0.5 rounded-xs text-[9px] font-bold uppercase tracking-wider">
+                          <Unlock size={10} className="shrink-0" />
+                          <span>UNENCRYPTED</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2">
@@ -303,17 +330,32 @@ export default function CollaborateDrawer({
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                       placeholder="ENTER ROOM CODE (e.g. SQUAD-101)"
-                      className="flex-1 bg-brand-bg text-slate-200 text-xs px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent placeholder-slate-600"
+                      className="flex-1 bg-brand-bg text-slate-200 text-xs px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent placeholder-slate-650 font-mono"
                     />
                     <button
                       type="button"
                       onClick={generateRandomCode}
-                      title="Generate tactical code"
+                      title="Generate tactical code & secure key"
                       className="p-2 border border-brand-accent/30 bg-brand-accent/5 hover:bg-brand-accent/15 rounded-xs text-brand-accent transition-colors cursor-pointer"
                     >
                       <RefreshCw size={14} />
                     </button>
                   </div>
+                  
+                  <div className="space-y-1">
+                    <div className="text-[9px] text-slate-400 uppercase tracking-wider flex justify-between">
+                      <span>ENCRYPTION KEY (OPTIONAL)</span>
+                      {joinPassword && <span className="text-[9px] text-emerald-400 font-bold">SECURE KEY STAGED</span>}
+                    </div>
+                    <input
+                      type="text"
+                      value={joinPassword}
+                      onChange={(e) => setJoinPassword(e.target.value)}
+                      placeholder="ENTER ENCRYPTION PASSWORD"
+                      className="w-full bg-brand-bg text-slate-200 text-xs px-3 py-2 border border-brand-accent/20 rounded-xs focus:outline-hidden focus:border-brand-accent focus:ring-1 focus:ring-brand-accent placeholder-slate-650 font-mono"
+                    />
+                  </div>
+
                   <button
                     type="submit"
                     disabled={!joinCode.trim()}

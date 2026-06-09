@@ -40,6 +40,7 @@ export function useCollaboration(
   setLocalState: (state: BoardState) => void
 ) {
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomPassword, setRoomPassword] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [peerCount, setPeerCount] = useState(0);
   const [peers, setPeers] = useState<PeerInfo[]>([]);
@@ -133,7 +134,7 @@ export function useCollaboration(
   };
 
   // Connect to a collaborative room
-  const connectToRoom = async (roomCode: string, currentBoard: BoardState) => {
+  const connectToRoom = async (roomCode: string, currentBoard: BoardState, password?: string) => {
     const cleanRoomCode = roomCode.trim().toUpperCase();
     if (!cleanRoomCode) return;
 
@@ -141,6 +142,7 @@ export function useCollaboration(
     disconnectFromRoom();
 
     setRoomId(cleanRoomCode);
+    setRoomPassword(password || null);
     setIsConnected(true);
 
     const doc = new Y.Doc();
@@ -177,6 +179,7 @@ export function useCollaboration(
         signaling: signalingServers,
         filterBcConns: true,
         maxConns: getRandomMaxConns(),
+        password: password || undefined,
       });
     } catch (err) {
       console.warn("[Collab] WebRTC provider init failed, local-only mode:", err);
@@ -386,6 +389,7 @@ export function useCollaboration(
     }
 
     setRoomId(null);
+    setRoomPassword(null);
     setIsConnected(false);
     setPeerCount(0);
     setPeers([]);
@@ -442,6 +446,7 @@ export function useCollaboration(
 
   return {
     roomId,
+    roomPassword,
     isConnected,
     peerCount,
     peers,

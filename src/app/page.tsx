@@ -204,6 +204,7 @@ function BoardApp() {
   // Initialize collaboration hook
   const {
     roomId,
+    roomPassword,
     isConnected,
     peerCount,
     peers,
@@ -311,6 +312,7 @@ function BoardApp() {
         return {
           ...p,
           roomId: roomId,
+          roomPassword: roomPassword,
           isOnline: isConnected,
         };
       }
@@ -321,7 +323,7 @@ function BoardApp() {
       setProjects(updated);
       saveProjectsList(updated);
     }
-  }, [roomId, isConnected, activeProjectId, projects]);
+  }, [roomId, roomPassword, isConnected, activeProjectId, projects]);
 
   // Handle switching projects
   const handleSelectProject = async (id: string) => {
@@ -371,7 +373,7 @@ function BoardApp() {
     // Connect to room if the project is configured with a room
     const targetProject = projects.find((p) => p.id === id);
     if (targetProject && targetProject.roomId && currentBoard) {
-      connectToRoom(targetProject.roomId, currentBoard);
+      connectToRoom(targetProject.roomId, currentBoard, targetProject.roomPassword || undefined);
     }
   };
 
@@ -537,8 +539,14 @@ function BoardApp() {
       autoJoinCheckedRef.current = true;
       const params = new URLSearchParams(window.location.search);
       const roomParam = params.get("room");
+      let passwordParam = params.get("pass");
+      if (typeof window !== "undefined" && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.slice(1));
+        const hashPass = hashParams.get("pass");
+        if (hashPass) passwordParam = hashPass;
+      }
       if (roomParam) {
-        connectToRoom(roomParam, boardState);
+        connectToRoom(roomParam, boardState, passwordParam || undefined);
       }
     }
   }, [boardState, connectToRoom]);
@@ -1001,6 +1009,7 @@ function BoardApp() {
         isOpen={isCollabOpen}
         onClose={() => setIsCollabOpen(false)}
         roomId={roomId}
+        roomPassword={roomPassword}
         isConnected={isConnected}
         peerCount={peerCount}
         peers={peers}
@@ -1011,8 +1020,8 @@ function BoardApp() {
         onUpdateCallsign={updateCallsign}
         onUpdateRole={updateLocalRole}
         onChangePeerRole={changePeerRole}
-        onConnect={(code) => {
-          if (boardState) connectToRoom(code, boardState);
+        onConnect={(code, pass) => {
+          if (boardState) connectToRoom(code, boardState, pass);
         }}
         onDisconnect={disconnectFromRoom}
       />
