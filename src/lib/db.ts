@@ -72,3 +72,13 @@ export async function loadBoardState(projectId: string = DEFAULT_PROJECT_ID): Pr
   }
 }
 
+export async function deleteBoardState(projectId: string): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.delete(STORE_NAME, `board-state-${projectId}`);
+  } catch (error) {
+    console.error(`Failed to delete board state for project ${projectId} from IndexedDB:`, error);
+  }
+}
+
+

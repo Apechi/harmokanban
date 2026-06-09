@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
+import { useConfirm } from "./ConfirmModal";
+
 import { BoardColumn, TaskCard } from "@/types";
 import Card from "./Card";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
@@ -31,6 +33,8 @@ export default function Column({
 }: ColumnProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(column.title);
+  const confirm = useConfirm();
+
 
   const handleSave = () => {
     if (editedTitle.trim()) {
@@ -47,12 +51,14 @@ export default function Column({
     }
   };
 
-  const handleDeleteColumn = () => {
-    if (
-      confirm(
-        `Retire Column: Retiring this column will delete all nested cards. Proceed?`
-      )
-    ) {
+  const handleDeleteColumn = async () => {
+    const confirmed = await confirm({
+      title: "Retire Column?",
+      message: `Retire Column: Retiring this column will delete all nested cards. Proceed?`,
+      confirmText: "RETIRE",
+      severity: "danger",
+    });
+    if (confirmed) {
       onDelete(column.id);
     }
   };

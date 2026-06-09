@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Folder, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Radio, ShieldAlert } from "lucide-react";
+import { Folder, Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Radio, ShieldAlert, Archive, RotateCcw } from "lucide-react";
 import { Project } from "@/types";
+import { useConfirm } from "./ConfirmModal";
+
 
 interface ProjectSidebarProps {
   projects: Project[];
@@ -11,6 +13,8 @@ interface ProjectSidebarProps {
   onCreateProject: (name: string) => void;
   onRenameProject: (id: string, newName: string) => void;
   onDeleteProject: (id: string) => void;
+  onRestoreProject?: (id: string) => void;
+  onHardDeleteProject?: (id: string) => void;
   isOpen: boolean;
   onToggleOpen: () => void;
 }
@@ -22,6 +26,8 @@ export default function ProjectSidebar({
   onCreateProject,
   onRenameProject,
   onDeleteProject,
+  onRestoreProject,
+  onHardDeleteProject,
   isOpen,
   onToggleOpen,
 }: ProjectSidebarProps) {
@@ -29,6 +35,9 @@ export default function ProjectSidebar({
   const [newProjectName, setNewProjectName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const confirm = useConfirm();
+  const [isArchiveExpanded, setIsArchiveExpanded] = useState(false);
+
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +54,7 @@ export default function ProjectSidebar({
   };
 
   const activeProjects = projects.filter((p) => !p.archived);
+  const archivedProjects = projects.filter((p) => p.archived);
 
   return (
     <div
@@ -139,9 +149,15 @@ export default function ProjectSidebar({
                           <Edit2 size={12} />
                         </button>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            if (confirm(`Archive ${project.name}? This operation files will be hidden.`)) {
+                            const confirmed = await confirm({
+                              title: "Archive Operation?",
+                              message: `Archive ${project.name}? This operation files will be hidden.`,
+                              confirmText: "ARCHIVE",
+                              severity: "danger",
+                            });
+                            if (confirmed) {
                               onDeleteProject(project.id);
                             }
                           }}
@@ -204,6 +220,65 @@ export default function ProjectSidebar({
                 NEW OPERATION
               </button>
             )}
+
+            {archivedProjects.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-brand-accent/10">
+                <button
+                  type="button"
+                  onClick={() => setIsArchiveExpanded(!isArchiveExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-black text-slate-500 hover:text-slate-300 tracking-wider mb-2 uppercase cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Archive size={12} />
+                    DECOMMISSIONED ({archivedProjects.length})
+                  </span>
+                  <span>{isArchiveExpanded ? "[-]" : "[+]"}</span>
+                </button>
+
+                {isArchiveExpanded && (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {archivedProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="group flex items-center justify-between p-2 rounded-xs border border-brand-accent/5 bg-slate-950/20 hover:border-slate-800"
+                      >
+                        <span className="text-[11px] text-slate-500 truncate max-w-[120px]" title={project.name}>
+                          {project.name}
+                        </span>
+                        <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => onRestoreProject?.(project.id)}
+                            className="p-1 text-slate-500 hover:text-cyan-400 rounded-xs cursor-pointer"
+                            title="Restore Operation"
+                          >
+                            <RotateCcw size={11} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const confirmed = await confirm({
+                                title: "PURGE DATABASE RECORD?",
+                                message: `Permanently delete ${project.name}? This operation logs and active files will be completely purged.`,
+                                confirmText: "PURGE",
+                                severity: "danger",
+                              });
+                              if (confirmed) {
+                                onHardDeleteProject?.(project.id);
+                              }
+                            }}
+                            className="p-1 text-slate-500 hover:text-brand-destructive rounded-xs cursor-pointer"
+                            title="Permanently Delete Operation"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         ) : (
           <div className="flex flex-col items-center gap-3">
@@ -221,6 +296,17 @@ export default function ProjectSidebar({
                 {p.name.slice(0, 2)}
               </button>
             ))}
+
+            {archivedProjects.length > 0 && (
+              <button
+                type="button"
+                onClick={onToggleOpen}
+                className="w-8 h-8 rounded-xs border border-dashed border-slate-700 hover:border-slate-500 flex items-center justify-center text-slate-500 hover:text-slate-300 transition-all cursor-pointer mt-4"
+                title={`Expand to view ${archivedProjects.length} decommissioned operations`}
+              >
+                <Archive size={14} />
+              </button>
+            )}
           </div>
         )}
       </div>

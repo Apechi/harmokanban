@@ -127,7 +127,7 @@ export default function CustomizationDrawer({
                         : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    ARKNIGHTS (DARK)
+                    DARK
                   </button>
                   <button
                     type="button"
@@ -138,7 +138,7 @@ export default function CustomizationDrawer({
                         : "text-slate-450 hover:text-slate-200"
                     }`}
                   >
-                    ENDFIELD (LIGHT)
+                    LIGHT
                   </button>
                 </div>
               </div>

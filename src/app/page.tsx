@@ -20,6 +20,7 @@ import {
   loadProjectsList,
   saveProjectsList,
   DEFAULT_PROJECT_ID,
+  deleteBoardState,
 } from "@/lib/db";
 import Board from "@/components/Board";
 import CardModal from "@/components/CardModal";
@@ -40,6 +41,8 @@ import {
   useCustomization,
 } from "@/components/CustomizationContext";
 import CustomizationDrawer from "@/components/CustomizationDrawer";
+import { ConfirmProvider } from "@/components/ConfirmModal";
+
 
 // Default seed data if IndexedDB is empty
 const DEFAULT_STATE: BoardState = {
@@ -159,7 +162,9 @@ const sanitizeBgUrl = (url: string) => {
 export default function Home() {
   return (
     <CustomizationProvider>
-      <BoardApp />
+      <ConfirmProvider>
+        <BoardApp />
+      </ConfirmProvider>
     </CustomizationProvider>
   );
 }
@@ -243,6 +248,22 @@ function BoardApp() {
       if (!loadedProjects || loadedProjects.length === 0) {
         loadedProjects = [defaultProj];
         await saveProjectsList(loadedProjects);
+      } else {
+        // Deduplicate IDs to prevent key conflicts
+        const seenIds = new Set<string>();
+        let hasDuplicates = false;
+        const deduplicatedProjects = loadedProjects.map((p) => {
+          if (seenIds.has(p.id)) {
+            hasDuplicates = true;
+            return { ...p, id: crypto.randomUUID() };
+          }
+          seenIds.add(p.id);
+          return p;
+        });
+        if (hasDuplicates) {
+          loadedProjects = deduplicatedProjects;
+          await saveProjectsList(loadedProjects);
+        }
       }
       setProjects(loadedProjects);
 
@@ -398,9 +419,9 @@ function BoardApp() {
 
     const remaining = updated.filter((p) => !p.archived);
     if (remaining.length === 0) {
-      // If no projects remain, automatically create a new default project
+      // If no projects remain, automatically create a new default project with a unique ID
       const defaultProj: Project = {
-        id: DEFAULT_PROJECT_ID,
+        id: crypto.randomUUID(),
         name: "Main Operations",
         roomId: null,
         isOnline: false,
@@ -416,6 +437,47 @@ function BoardApp() {
 
     if (activeProjectId === id) {
       handleSelectProject(remaining[0].id);
+    }
+  };
+
+  // Restore archived project
+  const handleRestoreProject = async (id: string) => {
+    const updated = projects.map((p) =>
+      p.id === id ? { ...p, archived: false } : p
+    );
+    setProjects(updated);
+    await saveProjectsList(updated);
+    handleSelectProject(id);
+  };
+
+  // Permanently delete project
+  const handleHardDeleteProject = async (id: string) => {
+    const updated = projects.filter((p) => p.id !== id);
+
+    // Ensure at least one project remains active
+    if (updated.filter((p) => !p.archived).length === 0) {
+      const defaultProj: Project = {
+        id: crypto.randomUUID(),
+        name: "Main Operations",
+        roomId: null,
+        isOnline: false,
+        archived: false,
+        createdAt: Date.now(),
+      };
+      updated.push(defaultProj);
+    }
+
+    setProjects(updated);
+    await saveProjectsList(updated);
+    await deleteBoardState(id);
+
+    // If the active project was somehow hard deleted, switch to the first active one
+    const activeExists = updated.some((p) => p.id === activeProjectId && !p.archived);
+    if (!activeExists) {
+      const firstActive = updated.find((p) => !p.archived);
+      if (firstActive) {
+        handleSelectProject(firstActive.id);
+      }
     }
   };
 
@@ -868,6 +930,8 @@ function BoardApp() {
           onCreateProject={handleCreateProject}
           onRenameProject={handleRenameProject}
           onDeleteProject={handleDeleteProject}
+          onRestoreProject={handleRestoreProject}
+          onHardDeleteProject={handleHardDeleteProject}
           isOpen={isSidebarOpen}
           onToggleOpen={() => setIsSidebarOpen(!isSidebarOpen)}
         />

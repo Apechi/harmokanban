@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TaskCard, Priority, SubTask } from "@/types";
 import { X, Calendar, Plus, Trash2, CheckSquare, Tag, AlignLeft, Hash, User } from "lucide-react";
+import { useConfirm } from "./ConfirmModal";
+
 
 interface CardModalProps {
   card: TaskCard | null;
@@ -27,6 +29,8 @@ export default function CardModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("LOW");
+  const confirm = useConfirm();
+
   const [dueDate, setDueDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [storyPoints, setStoryPoints] = useState<number | null>(null);
@@ -377,8 +381,14 @@ export default function CardModal({
                 <>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm("Delete Card: Are you sure you want to terminate this card deployment?")) {
+                    onClick={async () => {
+                      const confirmed = await confirm({
+                        title: "Terminate Task?",
+                        message: "Delete Card: Are you sure you want to terminate this card deployment?",
+                        confirmText: "TERMINATE",
+                        severity: "danger",
+                      });
+                      if (confirmed) {
                         onDelete(card.id, card.columnId);
                         onClose();
                       }
