@@ -10,7 +10,8 @@ KanbanHarmo is built as a vertical MVP slice-by-slice, delivering full user valu
 - ✅ **v2.0 Advanced Collaboration & Multi-Project Support** - Phases 4-5 (shipped 2026-06-09)
 - ✅ **v3.0 Analytics & Performance Dashboard** - Phase 6 (shipped 2026-06-09)
 - ✅ **v4.0 Visual Identity & Customization** - Phase 7 (shipped 2026-06-09)
-- ⏳ **v5.0 Real-time Discussion & Chat** - Phases 8-9 (Planned)
+- ✅ **v5.0 Room-Level Real-Time Chat** - Phase 8 (shipped 2026-06-09)
+- ⏳ **v5.1 Collaboration Notifications & Card Comments** - Phases 9-10 (Planned)
 
 ## Phases
 
@@ -157,10 +158,10 @@ Plans:
 
 </details>
 
-<details open>
-<summary>⏳ v5.0 Real-time Discussion & Chat (Planned)</summary>
+<details>
+<summary>✅ v5.0 Room-Level Real-Time Chat (Shipped 2026-06-09)</summary>
 
-**Milestone Goal:** Enable real-time peer communication channels within rooms and boards via a group room chat panel and card-level comment threads.
+**Milestone Goal:** Enable real-time workspace-wide group chat messaging inside connected rooms.
 
 #### Phase 8: Room-level Real-time Chat
 
@@ -179,6 +180,13 @@ Plans:
 - [x] 08-01: Update collaboration store/provider to introduce Yjs shared array structure for chat messages.
 - [x] 08-02: Build the Room Chat Drawer UI with a monospace, tactical grid styling.
 
+</details>
+
+<details open>
+<summary>⏳ v5.1 Collaboration Notifications & Card Comments (Planned)</summary>
+
+**Milestone Goal:** Provide card-level discussion comments and real-time interactive collaboration notifications.
+
 #### Phase 9: Card-level Discussion & Comment Threads
 
 **Goal:** Build a task-specific comment section inside the Card details modal for structured card discussion.
@@ -195,6 +203,23 @@ Plans:
 - [ ] 09-01: Update task card state schema and Yjs sync layer to support a card comments array.
 - [ ] 09-02: Add a fully styled, interactive comments/discussion feed section to CardModal.
 
+#### Phase 10: Real-time Collaboration Notifications
+
+**Goal:** Implement interactive real-time collaboration notifications (toasts and history feed) with distinct styling and click actions.
+**Depends on:** Phase 9
+**Requirements:** NOTIF-01, NOTIF-02, NOTIF-03, NOTIF-04
+**Success Criteria** (what must be TRUE):
+
+  1. Collaborators receive instant toast alerts for peer board updates, chat messages, and project changes.
+  2. Toast notifications have distinct colors, icons, and categories.
+  3. Clicking a notification performs contextual actions (opens card modal, opens chat drawer, or switches project).
+  4. Users can toggle a scrollable notification feed dropdown/panel from the header to view history.
+
+**Plans:**
+
+- [ ] 10-01: Update peer synchronization layer to broadcast board changes and project events.
+- [ ] 10-02: Build the notification toaster system and header history feed dropdown UI.
+
 </details>
 
 ---
@@ -202,7 +227,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -214,4 +239,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Analytics & Performance Dashboard | v3.0 | 4/4 | Complete | 2026-06-09 |
 | 7. Theme Switcher & Styling Customization | v4.0 | 3/3 | Complete | 2026-06-09 |
 | 8. Room-level Real-time Chat | v5.0 | 2/2 | Complete | 2026-06-09 |
-| 9. Card-level Discussion & Comment Threads | v5.0 | 0/2 | Planned | |
+| 9. Card-level Discussion & Comment Threads | v5.1 | 0/2 | Planned | |
+| 10. Real-time Collaboration Notifications | v5.1 | 0/2 | Planned | |

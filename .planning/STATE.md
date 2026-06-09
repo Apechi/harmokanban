@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.0
-milestone_name: milestone
+milestone: v5.1
+milestone_name: Collaboration Notifications & Card Comments
 status: planning
-stopped_at: Phase 08 complete
-last_updated: "2026-06-09T14:42:00.000Z"
+last_updated: "2026-06-09T08:27:28.800Z"
 last_activity: 2026-06-09
 progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 2
-  percent: 50
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,11 +24,12 @@ See: .planning/PROJECT.md (updated 2026-06-09)
 
 ## Current Position
  
-Phase: None
-Plan: None
-Status: Planning
-Last activity: 2026-06-09
- 
+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-09 — Milestone v5.1 started
+
 ## Performance Metrics
  
 **Velocity:**

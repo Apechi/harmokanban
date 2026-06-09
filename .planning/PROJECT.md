@@ -8,16 +8,16 @@ An intuitive and advanced Kanban web application designed specifically for start
 
 Enable rapid, frictionless startup project planning with a highly interactive, collaborative client-side board and Gantt visualization.
 
-## Current Milestone: v5.0 Real-time Discussion & Chat
+## Current Milestone: v5.1 Collaboration Notifications & Card Comments
 
-**Goal:** Provide startup teams with real-time collaboration communication channels including room-level group chat and card-level comment/discussion threads.
+**Goal:** Provide startup teams with real-time collaboration notifications for project, card, and chat updates, along with task card-level comments.
 
 **Target features:**
-- Room Chat Drawer/Panel for collaborative workspace messaging
 - Task-specific discussion and comment threads within Card details
-- Real-time comment and message synchronization using Yjs/WebRTC
-- Operator user attribution (using squad callsigns and IDs) for messages and comments
-- Monospace/tactical design matching the app's visual identity (Arknights & Endfield themes)
+- Real-time comment synchronization using Yjs/WebRTC
+- Real-time collaboration notifications (toasts and history feed) with distinct styling for different events
+- Interactive notifications: clicking on a notification navigates to or opens the respective item (card, chat drawer, or project switcher)
+- Monospace/tactical design matching the app's visual identity
 
 ## Requirements
 
@@ -40,13 +40,15 @@ Enable rapid, frictionless startup project planning with a highly interactive, c
 - [x] Accent color selection/override functionality (Phase 7)
 - [x] Background overlay customization and opacity settings (Phase 7)
 - [x] Theme state client persistence (localStorage / Yjs state) (Phase 7)
+- [x] Room Chat Drawer/Panel for real-time peer messaging (Phase 8)
 
 ### Active
 
-- [ ] Room Chat Drawer/Panel for real-time peer messaging
-- [ ] Task card comment threads showing operator identity and message timestamps
-- [ ] Peer-to-peer real-time sync of chat history and comments via Yjs
-- [ ] Offline storage and persistence of chat/comment logs via IndexedDB
+- [ ] Task card comment threads showing operator identity and message timestamps (Phase 9)
+- [ ] Peer-to-peer real-time sync of comments via Yjs (Phase 9)
+- [ ] Offline storage and persistence of comment logs via IndexedDB (Phase 9)
+- [ ] Real-time collaboration notifications (toasts and feed drawer/dropdown) for chat, card, and project changes
+- [ ] Interactive click actions on notifications to open the card modal, room chat, or project switcher
 
 ### Out of Scope
 
@@ -89,4 +91,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-09 after Milestone v4.0 completion and v5.0 start*
+*Last updated: 2026-06-09 after Milestone v5.1 start*

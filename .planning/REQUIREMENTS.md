@@ -84,11 +84,20 @@
 
 ### Chat & Discussions (CHAT)
 
-- [ ] **CHAT-01**: User can toggle a Room Chat Drawer/Panel from the main dashboard when connected to a collaborative room.
-- [ ] **CHAT-02**: Room-level chat messages sync in real-time between peers using Yjs shared array structure, maintaining a scrollable message log with timestamps and sender attribution.
+- [x] **CHAT-01**: User can toggle a Room Chat Drawer/Panel from the main dashboard when connected to a collaborative room.
+- [x] **CHAT-02**: Room-level chat messages sync in real-time between peers using Yjs shared array structure, maintaining a scrollable message log with timestamps and sender attribution.
 - [ ] **CHAT-03**: User can add text comments to individual task cards inside the Card details modal.
 - [ ] **CHAT-04**: Card-level comments sync in real-time across peers, recording the operator's callsign, user ID, and a creation timestamp.
 - [ ] **CHAT-05**: Chat and comment history are persisted offline locally in IndexedDB to maintain session history.
+
+## v5.1 Requirements (Active)
+
+### Collaboration Notifications (NOTIF)
+
+- [ ] **NOTIF-01**: User receives real-time toast notification alerts for collaboration events (new chat messages when chat is closed, card added/moved/updated, and project created/renamed by peers).
+- [ ] **NOTIF-02**: Notifications use distinct styling, icons, and categories (Chat, Card, Project) matching the tactical theme.
+- [ ] **NOTIF-03**: Notifications are interactive: clicking a notification performs a contextual action (opens card details, opens room chat, or switches project).
+- [ ] **NOTIF-04**: A scrollable notification history/feed UI panel is accessible from the header to review recent collaboration events.
 
 ## Out of Scope
 
@@ -135,11 +144,15 @@
 | THEME-02 | Phase 7 | Completed |
 | THEME-03 | Phase 7 | Completed |
 | THEME-04 | Phase 7 | Completed |
-| CHAT-01 | Phase 8 | Pending |
-| CHAT-02 | Phase 8 | Pending |
+| CHAT-01 | Phase 8 | Completed |
+| CHAT-02 | Phase 8 | Completed |
 | CHAT-03 | Phase 9 | Pending |
 | CHAT-04 | Phase 9 | Pending |
 | CHAT-05 | Phase 8, 9 | Pending |
+| NOTIF-01 | Phase 10 | Pending |
+| NOTIF-02 | Phase 10 | Pending |
+| NOTIF-03 | Phase 10 | Pending |
+| NOTIF-04 | Phase 10 | Pending |
 
 **Coverage:**
 
@@ -147,6 +160,7 @@
 - v2 requirements: 7 total | 7 completed
 - v3 requirements: 7 total | 7 completed
 - v4 requirements: 4 total | 4 completed
-- v5 requirements: 5 total | 0 completed
-- Mapped to phases: 41 / 41
+- v5 requirements: 5 total | 2 completed
+- v5.1 requirements: 4 total | 0 completed
+- Mapped to phases: 45 / 45
 - Unmapped: 0 ✓
