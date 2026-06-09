@@ -795,7 +795,7 @@ function BoardApp() {
             <h1 className="text-md font-bold tracking-wider text-slate-100 flex items-center gap-2">
               KANBANHARMO
               <span className="text-[10px] bg-brand-accent/20 text-brand-accent px-1.5 py-0.5 rounded-full font-mono uppercase tracking-normal">
-                v1.1-Collab
+                v1.5-Collab
               </span>
             </h1>
             <p className="text-[10px] text-slate-400 font-mono tracking-widest uppercase mt-0.5">

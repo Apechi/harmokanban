@@ -1,6 +1,6 @@
 {
   "name": "kanban-harmo",
-  "version": "0.1.0",
+  "version": "1.5.0",
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,signal -c cyan,yellow \"npm run dev:next\" \"npm run dev:signal\"",
