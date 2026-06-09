@@ -51,6 +51,9 @@ export function useCollaboration(
   const [peerCount, setPeerCount] = useState(0);
   const [peers, setPeers] = useState<PeerInfo[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  // Tracks the latest project name synced from the room owner so page.tsx
+  // can update the local projects list when a remote rename happens.
+  const [remoteProjectName, setRemoteProjectName] = useState<string | null>(null);
   const [localCallsign, setLocalCallsign] = useState<string>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("squad-operator-callsign") || getRandomOperatorCallsign();
@@ -80,6 +83,9 @@ export function useCollaboration(
   const isSyncingFromYjsRef = useRef(false);
   const ownerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevPeersRef = useRef<PeerInfo[]>([]);
+  // Suppress notifications until initial room sync is complete to avoid
+  // spamming the user with all historical changes that happened before joining.
+  const isInitialSyncDoneRef = useRef(false);
 
   // Ref to track the current board state for delta detection
   const boardStateRef = useRef<BoardState | null>(initialLocalState);
@@ -174,7 +180,8 @@ export function useCollaboration(
       setChatMessages(yChatArray.toArray());
       
       // Trigger notifications for new remote messages
-      if (event.transaction.local) return;
+      // Guard: skip until initial sync is complete to avoid replaying history.
+      if (event.transaction.local || !isInitialSyncDoneRef.current) return;
       
       event.delta.forEach((d) => {
         if (d.insert) {
@@ -279,13 +286,19 @@ export function useCollaboration(
         }
       }
 
-      // Handle project renaming notifications
+      // Handle project renaming — always update local state so Peer B's UI stays
+      // in sync, then fire a notification only after initial sync is complete.
       if (!event.transaction.local && event.keysChanged.has("projectName")) {
         const renamedProject = yMetaMap.get("projectName") as string | undefined;
-        if (renamedProject && onRemoteUpdate) {
-          onRemoteUpdate("project", "Sector Renamed", `Operational sector renamed to: ${renamedProject}`, {
-            projectId: cleanRoomCode,
-          });
+        if (renamedProject) {
+          // Always sync the name into React state regardless of sync phase.
+          setRemoteProjectName(renamedProject);
+          // Only show the toast notification after initial sync is done.
+          if (isInitialSyncDoneRef.current && onRemoteUpdate) {
+            onRemoteUpdate("project", "Sector Renamed", `Operational sector renamed to: ${renamedProject}`, {
+              projectId: cleanRoomCode,
+            });
+          }
         }
       }
     });
@@ -390,6 +403,9 @@ export function useCollaboration(
           chatArray.delete(0, chatArray.length - 100);
         }
       });
+
+      // Mark initial sync as complete — notifications are now live.
+      isInitialSyncDoneRef.current = true;
     });
 
     // Observe changes from Yjs Map to update react state
@@ -400,12 +416,15 @@ export function useCollaboration(
       isSyncingFromYjsRef.current = true;
       const updatedState = syncYjsToBoardState(yRootMap);
       if (updatedState) {
-        // Compare with boardStateRef.current to detect modifications
-        if (boardStateRef.current && onRemoteUpdate) {
-          // Compare cards
+        // Only fire notifications after initial sync — prevents spamming the user
+        // with every historical change that happened before they joined the room.
+        if (isInitialSyncDoneRef.current && boardStateRef.current && onRemoteUpdate) {
+          const oldState = boardStateRef.current;
+
+          // Cards added / moved / updated
           Object.keys(updatedState.cards).forEach((id) => {
             const newCard = updatedState.cards[id];
-            const oldCard = boardStateRef.current?.cards[id];
+            const oldCard = oldState.cards[id];
 
             if (!oldCard) {
               onRemoteUpdate("card", "Task Deployed", `Task ${newCard.code} (${newCard.title}) was deployed.`, {
@@ -422,6 +441,30 @@ export function useCollaboration(
               });
             }
           });
+
+          // Cards deleted — only existed in old state
+          Object.keys(oldState.cards).forEach((id) => {
+            if (!updatedState.cards[id]) {
+              const removed = oldState.cards[id];
+              onRemoteUpdate("card", "Task Eliminated", `Task ${removed.code} (${removed.title}) was removed.`, {});
+            }
+          });
+
+          // Columns added
+          Object.keys(updatedState.columns).forEach((id) => {
+            if (!oldState.columns[id]) {
+              const col = updatedState.columns[id];
+              onRemoteUpdate("card", "Squad Column Added", `New column "${col.title}" was added to the board.`, {});
+            }
+          });
+
+          // Columns deleted
+          Object.keys(oldState.columns).forEach((id) => {
+            if (!updatedState.columns[id]) {
+              const col = oldState.columns[id];
+              onRemoteUpdate("card", "Squad Column Removed", `Column "${col.title}" was removed from the board.`, {});
+            }
+          });
         }
         setLocalState(updatedState);
         saveBoardState(updatedState, cleanRoomCode);
@@ -432,6 +475,8 @@ export function useCollaboration(
 
   // Disconnect from the current collaborative room
   const disconnectFromRoom = () => {
+    // Reset sync flag so the next room join starts suppressed again.
+    isInitialSyncDoneRef.current = false;
     if (ownerTimerRef.current) {
       clearTimeout(ownerTimerRef.current);
       ownerTimerRef.current = null;
@@ -457,6 +502,7 @@ export function useCollaboration(
     setChatMessages([]);
     setOwnerId(null);
     setLocalRole("editor");
+    setRemoteProjectName(null);
     prevPeersRef.current = [];
   };
 
@@ -479,11 +525,15 @@ export function useCollaboration(
     syncBoardStateToYjs(newState, yRootMap, origin);
   };
 
-  // Update project name in room metadata
+  // Update project name in room metadata.
+  // Guard: skip the write if the value is already the same to avoid dirtying
+  // the CRDT and firing yMetaMap observers on all peers unnecessarily.
   const updateProjectName = (name: string) => {
     if (ydocRef.current && roomId) {
       const yMetaMap = ydocRef.current.getMap("room-metadata");
-      yMetaMap.set("projectName", name);
+      if (yMetaMap.get("projectName") !== name) {
+        yMetaMap.set("projectName", name);
+      }
     }
   };
 
@@ -525,6 +575,7 @@ export function useCollaboration(
     ownerId,
     isOwner: localUserId === ownerId,
     localRole,
+    remoteProjectName,
     updateLocalRole,
     changePeerRole,
     updateCallsign,

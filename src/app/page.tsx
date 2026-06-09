@@ -300,17 +300,38 @@ function BoardApp() {
     broadcastBoardState,
     sendChatMessage,
     updateProjectName,
+    remoteProjectName,
   } = useCollaboration(boardState, setBoardState, handleRemoteUpdate);
 
-  // Sync project name to room metadata when connected
+  // Sync project name to room metadata when connected.
+  // Only the room owner writes the project name — non-owners must not overwrite
+  // it, or they would trigger spurious "Sector Renamed" notifications on all peers.
   useEffect(() => {
-    if (isConnected && activeProjectId && projects.length > 0) {
+    if (isConnected && isOwner && activeProjectId && projects.length > 0) {
       const activeProj = projects.find((p) => p.id === activeProjectId);
       if (activeProj) {
         updateProjectName(activeProj.name);
       }
     }
-  }, [isConnected, activeProjectId, projects, updateProjectName]);
+  }, [isConnected, isOwner, activeProjectId, projects, updateProjectName]);
+
+  // Apply a remote project rename (sent by the room owner) to local state.
+  // Without this, Peer B would only see a toast but the project name in the
+  // sidebar would never update.
+  useEffect(() => {
+    if (!remoteProjectName || !activeProjectId) return;
+    setProjects((prev) => {
+      const alreadyCurrent = prev.find(
+        (p) => p.id === activeProjectId && p.name === remoteProjectName
+      );
+      if (alreadyCurrent) return prev; // nothing to do
+      const updated = prev.map((p) =>
+        p.id === activeProjectId ? { ...p, name: remoteProjectName } : p
+      );
+      saveProjectsList(updated);
+      return updated;
+    });
+  }, [remoteProjectName, activeProjectId]);
 
   const handleNotificationClick = async (notif: NotificationItem) => {
     handleReadNotification(notif.id);
