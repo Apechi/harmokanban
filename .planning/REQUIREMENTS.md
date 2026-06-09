@@ -86,9 +86,9 @@
 
 - [x] **CHAT-01**: User can toggle a Room Chat Drawer/Panel from the main dashboard when connected to a collaborative room.
 - [x] **CHAT-02**: Room-level chat messages sync in real-time between peers using Yjs shared array structure, maintaining a scrollable message log with timestamps and sender attribution.
-- [ ] **CHAT-03**: User can add text comments to individual task cards inside the Card details modal.
-- [ ] **CHAT-04**: Card-level comments sync in real-time across peers, recording the operator's callsign, user ID, and a creation timestamp.
-- [ ] **CHAT-05**: Chat and comment history are persisted offline locally in IndexedDB to maintain session history.
+- [x] **CHAT-03**: User can add text comments to individual task cards inside the Card details modal.
+- [x] **CHAT-04**: Card-level comments sync in real-time across peers, recording the operator's callsign, user ID, and a creation timestamp.
+- [x] **CHAT-05**: Chat and comment history are persisted offline locally in IndexedDB to maintain session history.
 
 ## v5.1 Requirements (Active)
 
@@ -149,10 +149,10 @@
 | CHAT-03 | Phase 9 | Pending |
 | CHAT-04 | Phase 9 | Pending |
 | CHAT-05 | Phase 8, 9 | Pending |
-| NOTIF-01 | Phase 10 | Complete |
-| NOTIF-02 | Phase 10 | Complete |
-| NOTIF-03 | Phase 10 | Complete |
-| NOTIF-04 | Phase 10 | Complete |
+| NOTIF-01 | Phase 10 | Completed |
+| NOTIF-02 | Phase 10 | Completed |
+| NOTIF-03 | Phase 10 | Completed |
+| NOTIF-04 | Phase 10 | Completed |
 
 **Coverage:**
 
@@ -160,7 +160,7 @@
 - v2 requirements: 7 total | 7 completed
 - v3 requirements: 7 total | 7 completed
 - v4 requirements: 4 total | 4 completed
-- v5 requirements: 5 total | 2 completed
-- v5.1 requirements: 4 total | 0 completed
+- v5 requirements: 5 total | 5 completed
+- v5.1 requirements: 4 total | 4 completed
 - Mapped to phases: 45 / 45
 - Unmapped: 0 ✓
