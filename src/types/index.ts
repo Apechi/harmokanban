@@ -62,7 +62,6 @@ export interface Project {
   id: string;
   name: string;
   roomId: string | null; // Room ID if syncing via WebRTC, otherwise null (local-only)
-  roomPassword?: string | null;
   isOnline: boolean;
   archived: boolean;
   createdAt: number;
