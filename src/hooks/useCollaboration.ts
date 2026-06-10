@@ -161,6 +161,20 @@ export function useCollaboration(
     setRoomId(cleanRoomCode);
     setIsConnected(true);
 
+    // Fetch TURN server credentials dynamically first
+    let iceServers: any[] = [{ urls: "stun:stun.l.google.com:19302" }];
+    try {
+      const response = await fetch("https://kanbanharmo.metered.live/api/v1/turn/credentials?apiKey=78e427c2f9a7bdc69c3ade446f09dbe781a3");
+      if (response.ok) {
+        const fetchedServers = await response.json();
+        if (Array.isArray(fetchedServers)) {
+          iceServers = fetchedServers;
+        }
+      }
+    } catch (err) {
+      console.warn("[Collab] Failed to fetch TURN credentials, using fallback STUN:", err);
+    }
+
     const doc = new Y.Doc();
     ydocRef.current = doc;
 
@@ -205,20 +219,6 @@ export function useCollaboration(
     const signalingServers = isSecure
       ? [prodSignaling]
       : [`ws://${signalingHost}:4444`, prodSignaling];
-
-    // Fetch TURN server credentials dynamically
-    let iceServers: any[] = [{ urls: "stun:stun.l.google.com:19302" }];
-    try {
-      const response = await fetch("https://kanbanharmo.metered.live/api/v1/turn/credentials?apiKey=78e427c2f9a7bdc69c3ade446f09dbe781a3");
-      if (response.ok) {
-        const fetchedServers = await response.json();
-        if (Array.isArray(fetchedServers)) {
-          iceServers = fetchedServers;
-        }
-      }
-    } catch (err) {
-      console.warn("[Collab] Failed to fetch TURN credentials, using fallback STUN:", err);
-    }
 
     let provider: WebrtcProvider;
     try {
@@ -275,13 +275,26 @@ export function useCollaboration(
           if (!ydocRef.current) return;
           const currentMeta = ydocRef.current.getMap("room-metadata");
           if (!currentMeta.has("ownerId")) {
-            console.log("[Collab] No existing owner detected after delay. Claiming ownership.");
-            currentMeta.set("ownerId", localUserId);
-            setOwnerId(localUserId);
-            setLocalRole("editor");
+            // Get all connected peer user IDs from the current awareness states
+            const states = providerRef.current ? Array.from(providerRef.current.awareness.getStates().values()) : [];
+            const peerUserIds = states
+              .map((s: any) => s.user?.userId)
+              .filter((id): id is string => typeof id === "string" && id !== localUserId);
+            
+            const allIds = [localUserId, ...peerUserIds].sort();
+            const shouldClaim = allIds[0] === localUserId;
+
+            if (shouldClaim) {
+              console.log("[Collab] No existing owner detected. Claiming ownership deterministically.");
+              currentMeta.set("ownerId", localUserId);
+              setOwnerId(localUserId);
+              setLocalRole("editor");
+            } else {
+              console.log("[Collab] No existing owner detected, but another peer has priority. Waiting for sync.");
+            }
           }
           ownerTimerRef.current = null;
-        }, 1500);
+        }, 5000); // 5 seconds delay to allow WebRTC connection and sync
       }
     };
 
