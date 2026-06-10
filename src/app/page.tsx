@@ -47,6 +47,7 @@ import { ConfirmProvider } from "@/components/ConfirmModal";
 import NotificationFeed from "@/components/NotificationFeed";
 import NotificationToaster from "@/components/NotificationToaster";
 import { playNotificationSound } from "@/lib/audio";
+import { loadLatestBackupBoardState, clearAllBackups } from "@/lib/collaboration";
 
 
 // Default seed data if IndexedDB is empty
@@ -300,7 +301,7 @@ function BoardApp() {
     sendChatMessage,
     updateProjectName,
     remoteProjectName,
-  } = useCollaboration(boardState, setBoardState, handleRemoteUpdate);
+  } = useCollaboration(boardState, setBoardState, handleRemoteUpdate, activeProjectId);
 
   // Sync project name to room metadata when connected.
   // Only the room owner writes the project name — non-owners must not overwrite
@@ -425,22 +426,33 @@ function BoardApp() {
       setActiveProjectId(activeProj.id);
 
       // 2. Load board state for active project
-      const savedBoard = await loadBoardState(activeProj.id);
-      if (
-        savedBoard &&
-        savedBoard.columns &&
-        savedBoard.columnOrder &&
-        savedBoard.cards
-      ) {
-        const initialized = initializeStatusHistory(savedBoard);
-        setBoardState(initialized);
-        if (JSON.stringify(initialized) !== JSON.stringify(savedBoard)) {
+      const params = new URLSearchParams(window.location.search);
+      const roomParam = params.get("room");
+      const backup = await loadLatestBackupBoardState();
+      
+      if (backup && !roomParam) {
+        console.log("Detected backup from previous session. Restoring offline state...");
+        setBoardState(backup);
+        await saveBoardState(backup, activeProj.id);
+        await clearAllBackups();
+      } else {
+        const savedBoard = await loadBoardState(activeProj.id);
+        if (
+          savedBoard &&
+          savedBoard.columns &&
+          savedBoard.columnOrder &&
+          savedBoard.cards
+        ) {
+          const initialized = initializeStatusHistory(savedBoard);
+          setBoardState(initialized);
+          if (JSON.stringify(initialized) !== JSON.stringify(savedBoard)) {
+            await saveBoardState(initialized, activeProj.id);
+          }
+        } else {
+          const initialized = initializeStatusHistory(DEFAULT_STATE);
+          setBoardState(initialized);
           await saveBoardState(initialized, activeProj.id);
         }
-      } else {
-        const initialized = initializeStatusHistory(DEFAULT_STATE);
-        setBoardState(initialized);
-        await saveBoardState(initialized, activeProj.id);
       }
     }
     initProjectsAndBoard();
@@ -470,8 +482,8 @@ function BoardApp() {
   const handleSelectProject = async (id: string) => {
     if (id === activeProjectId) return;
 
-    // Disconnect old room connection first
-    disconnectFromRoom();
+    // Disconnect old room connection first without restoring backup into the active UI state
+    disconnectFromRoom(false);
 
     setActiveProjectId(id);
 

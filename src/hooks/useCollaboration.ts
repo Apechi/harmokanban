@@ -10,6 +10,8 @@ import {
   syncYjsToBoardState,
   getRandomOperatorCallsign,
   saveBackupBoardState,
+  loadLatestBackupBoardState,
+  clearAllBackups,
 } from "@/lib/collaboration";
 import { saveBoardState } from "@/lib/db";
 
@@ -43,7 +45,8 @@ export function useCollaboration(
     title: string,
     message: string,
     metadata?: Record<string, unknown>
-  ) => void
+  ) => void,
+  activeProjectId?: string
 ) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -85,6 +88,8 @@ export function useCollaboration(
   // Suppress notifications until initial room sync is complete to avoid
   // spamming the user with all historical changes that happened before joining.
   const isInitialSyncDoneRef = useRef(false);
+
+  const offlineBoardBackupRef = useRef<BoardState | null>(null);
 
   // Ref to track the current board state for delta detection
   const boardStateRef = useRef<BoardState | null>(initialLocalState);
@@ -155,8 +160,13 @@ export function useCollaboration(
     const cleanRoomCode = roomCode.trim().toUpperCase();
     if (!cleanRoomCode) return;
 
-    // Disconnect from existing room first
-    disconnectFromRoom();
+    // Disconnect from existing room first and get the restored backup if any
+    const restoredBackup = await disconnectFromRoom();
+    const boardToUse = restoredBackup || currentBoard;
+
+    // Save backup of the offline state before connecting to the room
+    await saveBackupBoardState(boardToUse);
+    offlineBoardBackupRef.current = boardToUse;
 
     setRoomId(cleanRoomCode);
     setIsConnected(true);
@@ -289,6 +299,12 @@ export function useCollaboration(
               currentMeta.set("ownerId", localUserId);
               setOwnerId(localUserId);
               setLocalRole("editor");
+              
+              // Seed the empty room with our current board state since we are the owner
+              if (!yRootMap.has("columnOrder")) {
+                console.log(`Room ${cleanRoomCode} is empty on ownership claim. Seeding with current board state...`);
+                syncBoardStateToYjs(boardToUse, yRootMap);
+              }
             } else {
               console.log("[Collab] No existing owner detected, but another peer has priority. Waiting for sync.");
             }
@@ -401,17 +417,16 @@ export function useCollaboration(
       const hasData = yRootMap.has("columnOrder");
 
       if (!hasData) {
-        // Seeding empty room with current board state
-        console.log(`Room ${cleanRoomCode} is empty. Seeding with current board state...`);
-        syncBoardStateToYjs(currentBoard, yRootMap);
+        // Do NOT seed here if we are just joining. Seeding will be handled inside the ownership claim timeout
+        // if we turn out to be the owner.
+        console.log(`Room ${cleanRoomCode} is empty locally. Waiting for network sync or ownership check...`);
       } else {
-        // Room has data. Overwrite local board but make a backup first
-        console.log(`Room ${cleanRoomCode} has data. Overwriting local state with backup...`);
-        await saveBackupBoardState(currentBoard);
+        // Room has data. Overwrite local board
+        console.log(`Room ${cleanRoomCode} has data. Overwriting local state...`);
         const syncedState = syncYjsToBoardState(yRootMap);
         if (syncedState) {
           setLocalState(syncedState);
-          await saveBoardState(syncedState, cleanRoomCode);
+          await saveBoardState(syncedState, activeProjectId || cleanRoomCode);
         }
       }
 
@@ -496,14 +511,15 @@ export function useCollaboration(
           });
         }
         setLocalState(updatedState);
-        saveBoardState(updatedState, cleanRoomCode);
+        saveBoardState(updatedState, activeProjectId || cleanRoomCode);
       }
       isSyncingFromYjsRef.current = false;
     });
   };
 
   // Disconnect from the current collaborative room
-  const disconnectFromRoom = () => {
+  const disconnectFromRoom = async (restoreBackup = true): Promise<BoardState | null> => {
+    const currentRoomId = roomId;
     // Reset sync flag so the next room join starts suppressed again.
     isInitialSyncDoneRef.current = false;
     if (ownerTimerRef.current) {
@@ -532,6 +548,25 @@ export function useCollaboration(
     setLocalRole("editor");
     setRemoteProjectName(null);
     prevPeersRef.current = [];
+
+    let restored: BoardState | null = null;
+    if (restoreBackup) {
+      let backup = offlineBoardBackupRef.current;
+      if (!backup) {
+        backup = await loadLatestBackupBoardState();
+      }
+      if (backup) {
+        restored = backup;
+        setLocalState(backup);
+        await saveBoardState(backup, activeProjectId || currentRoomId || "");
+        await clearAllBackups();
+      }
+      offlineBoardBackupRef.current = null;
+    } else {
+      offlineBoardBackupRef.current = null;
+      // Do NOT clear backups here, just reset the in-memory ref
+    }
+    return restored;
   };
 
   // Broadcast card editing presence info

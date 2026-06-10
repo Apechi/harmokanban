@@ -18,6 +18,40 @@ export async function saveBackupBoardState(state: BoardState): Promise<string> {
   }
 }
 
+// Retrieve the most recent backup board state from IndexedDB
+export async function loadLatestBackupBoardState(): Promise<BoardState | null> {
+  try {
+    const db = await getDB();
+    const keys = await db.getAllKeys(STORE_NAME);
+    const backupKeys = keys
+      .filter((k): k is string => typeof k === 'string' && k.startsWith('backup-'))
+      .sort(); // Lexicographical sort puts latest ISO date last
+    
+    if (backupKeys.length === 0) return null;
+    
+    const latestKey = backupKeys[backupKeys.length - 1];
+    const backup = await db.get(STORE_NAME, latestKey);
+    return backup || null;
+  } catch (error) {
+    console.error('Failed to load latest backup board state:', error);
+    return null;
+  }
+}
+
+// Delete all backup board states from IndexedDB
+export async function clearAllBackups(): Promise<void> {
+  try {
+    const db = await getDB();
+    const keys = await db.getAllKeys(STORE_NAME);
+    const backupKeys = keys.filter((k): k is string => typeof k === 'string' && k.startsWith('backup-'));
+    for (const key of backupKeys) {
+      await db.delete(STORE_NAME, key);
+    }
+  } catch (error) {
+    console.error('Failed to clear backup board states:', error);
+  }
+}
+
 // Random Arknights Operator Callsigns
 const CALLSIGNS = [
   'Doctor', 'Amiya', 'Kal\'tsit', 'Texas', 'Exusiai', 'Ch\'en', 'SilverAsh', 
