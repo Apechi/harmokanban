@@ -206,12 +206,31 @@ export function useCollaboration(
       ? [prodSignaling]
       : [`ws://${signalingHost}:4444`, prodSignaling];
 
+    // Fetch TURN server credentials dynamically
+    let iceServers: any[] = [{ urls: "stun:stun.l.google.com:19302" }];
+    try {
+      const response = await fetch("https://kanbanharmo.metered.live/api/v1/turn/credentials?apiKey=78e427c2f9a7bdc69c3ade446f09dbe781a3");
+      if (response.ok) {
+        const fetchedServers = await response.json();
+        if (Array.isArray(fetchedServers)) {
+          iceServers = fetchedServers;
+        }
+      }
+    } catch (err) {
+      console.warn("[Collab] Failed to fetch TURN credentials, using fallback STUN:", err);
+    }
+
     let provider: WebrtcProvider;
     try {
       provider = new WebrtcProvider(cleanRoomCode, doc, {
         signaling: signalingServers,
         filterBcConns: true,
         maxConns: getRandomMaxConns(),
+        peerOpts: {
+          config: {
+            iceServers,
+          },
+        },
       });
     } catch (err) {
       console.warn("[Collab] WebRTC provider init failed, local-only mode:", err);
